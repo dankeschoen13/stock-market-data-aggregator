@@ -1,7 +1,9 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, jsonify
 
-main_bp = Blueprint('main', __name__)
+api_bp = Blueprint('api', __name__)
 
-@main_bp.get('/')
+@api_bp.get('/')
 def index():
-    return render_template('index.html')
+    return jsonify({
+        "success": "Service is running!"
+    }), 200

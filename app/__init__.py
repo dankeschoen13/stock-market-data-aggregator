@@ -1,18 +1,18 @@
 from flask import Flask
 from config import Config
-from app.extensions import db, migrate, csrf, login_manager
+from app.extensions import db, migrate
 
-def create_app(config_class=Config):
+def create_app(config_class=Config, test_config=None):
 
     app = Flask(__name__)
     app.config.from_object(config_class)
+    if test_config is not None:
+        app.config.update(test_config)
 
     db.init_app(app)
     migrate.init_app(app, db) # render_as_batch=True if SQLite
-    csrf.init_app(app)
-    login_manager.init_app(app)
 
-    from app.routes import main_bp
-    app.register_blueprint(main_bp)
+    from app.routes import api_bp
+    app.register_blueprint(api_bp)
 
     return app
