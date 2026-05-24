@@ -1,1 +1,1 @@
-from .models import Database
+from .models import Stock
