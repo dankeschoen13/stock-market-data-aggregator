@@ -3,13 +3,15 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 
-def fetch_historical_data(ticker, api_key):
+def fetch_historical_data(ticker, api_key) -> pd.DataFrame | None:
     """
     Extracts raw JSON data from Financial Modeling Prep and converts it to a Pandas DataFrame.
 
     Args:
         ticker: A valid US stock ticker
         api_key: FMP-issued API key for the endpoint.
+    Returns:
+        pd.Dataframe: Stock historical data with added MACD and RSI columns
     """
 
     url = f"https://financialmodelingprep.com/stable/historical-price-eod/full?symbol={ticker}&apikey={api_key}"
@@ -34,14 +36,26 @@ def fetch_historical_data(ticker, api_key):
             print(f"No historical data found for {ticker}.")
             return None
 
-        # 2. Prepare the raw Pandas data frame
+        # 2. Prepare the dataframe and ensure it's always sorted in ascending order
         df = pd.DataFrame(daily_records)
+
+        df['date'] = pd.to_datetime(df['date'])
+        df.sort_values('date', ascending=True).reset_index(drop=True)
 
         # 3. Add MACD and RSI columns to the dataframe
         df = add_macd(df)
         df = add_rsi(df)
 
-        # 4. Return the completed dataframe
+        # 4. Rename columns to match the current database
+        df = df.rename(columns={
+            'date': 'trade_date',
+            'open': 'open_price',
+            'close': 'close_price',
+            'high': 'high_price',
+            'low': 'low_price'
+        })
+
+        # 5. Return the completed dataframe
         return df
 
     elif response.status_code == 429:
