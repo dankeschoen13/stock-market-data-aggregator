@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 
-def fetch_historical_data(ticker, api_key) -> pd.DataFrame | None:
+def fetch_latest_stock_data(ticker, api_key) -> pd.DataFrame | None:
     """
     Extracts raw JSON data from Financial Modeling Prep and converts it to a Pandas DataFrame.
 
@@ -56,6 +56,8 @@ def fetch_historical_data(ticker, api_key) -> pd.DataFrame | None:
         })
 
         # 5. Return the completed dataframe
+        df = df.tail(1)
+
         return df
 
     elif response.status_code == 429:
