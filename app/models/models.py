@@ -1,6 +1,7 @@
 from datetime import date
 from sqlalchemy import String, Date, Float, BigInteger, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.sql import expression
 from app.extensions import db
 
 
@@ -28,3 +29,17 @@ class Stock(db.Model):
     rsi_14: Mapped[float | None] = mapped_column(Float, nullable=True)
     macd_line: Mapped[float | None] = mapped_column(Float, nullable=True)
     ema_50: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+class TrackedTicker(db.Model):
+    __tablename__ = 'tracked_tickers'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ticker: Mapped[str] = mapped_column(
+        String(15),
+        unique=True,
+        nullable=False
+    )
+    is_active: Mapped[bool] = mapped_column(
+        default=True,
+        server_default=expression.true(),
+        nullable=False
+    )
