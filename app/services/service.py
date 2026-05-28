@@ -82,3 +82,67 @@ class MktDataSvc:
             logger.error(f"Database transaction failed for {entry_dict.get('ticker')}: {e}")
             db.session.rollback()
             raise ValueError(f"Failed to load data for {entry_dict.get('ticker')}")
+
+
+class TickerSvc:
+
+    @classmethod
+    def get_active_tickers(cls) -> list[TrackedTicker]:
+        """
+        Get a list of all active stock tickers from the db
+
+        Returns:
+            list[TrackedTicker]: A list of TrackedTicker objects
+        """
+        query = db.select(TrackedTicker).where(TrackedTicker.is_active == True)
+
+        return db.session.scalars(query).all()
+
+    @classmethod
+    def get_ticker_by_name(cls, ticker_symbol: str) -> TrackedTicker | None:
+        """
+        Get the TrackedTicker based on the ticker string.
+
+        Args:
+            ticker_symbol: The stock ticker that needs to be pulled
+
+        Returns:
+           TrackedTicker: The matching TrackedTicker
+        """
+        query = db.select(TrackedTicker).where(TrackedTicker.ticker == ticker_symbol)
+
+        return db.session.execute(query).scalar_one_or_none()
+
+    @classmethod
+    def add_new_ticker(cls, ticker_symbol: str) -> bool:
+        """
+        Attempts to add a new ticker using Postgres ON CONFLICT DO NOTHING.
+
+        Args:
+            ticker_symbol: The stock ticker that needs to be added
+
+        Returns:
+            bool: True if inserted, False if it was ignored (already exists).
+        """
+        insert_stmt = insert(TrackedTicker).values(
+            ticker=ticker_symbol,
+            is_active=True
+        )
+
+        stmt_w_ignore = insert_stmt.on_conflict_do_nothing(
+            index_elements=['ticker']
+        ).returning(TrackedTicker.id)
+
+        try:
+            result = db.session.execute(stmt_w_ignore)
+            db.session.commit()
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+
+            logger.error(f"Database error while adding ticker {ticker_symbol}. Error: {e}")
+            raise ValueError(f"Failed to add ticker{ticker_symbol}")
+
+        inserted_id = result.scalar()
+
+        return inserted_id is not None
