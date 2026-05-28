@@ -1,1 +1,1 @@
-from .models import Stock
+from .models import Stock, TrackedTicker

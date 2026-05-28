@@ -15,4 +15,7 @@ def create_app(config_class=Config, test_config=None):
     from app.routes import api_bp
     app.register_blueprint(api_bp)
 
+    from app.cli import seed_tickers_command
+    app.cli.add_command(seed_tickers_command) # type: ignore
+
     return app
