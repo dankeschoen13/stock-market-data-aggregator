@@ -21,6 +21,13 @@ class MktDataSvc:
         """
         Converts the latest DataFrame row into a clean dictionary,
         handling Pandas/NumPy types and matching database columns.
+
+        Args:
+            df: a pd.DataFrame containing the stock data to be converted
+            to a dictionary
+
+        Returns:
+            dict: the resulting dictionary object converted from pd.DataFrame
         """
         if df.empty:
             raise ValueError("DataFrame is empty.")
@@ -56,23 +63,29 @@ class MktDataSvc:
 
     @classmethod
     def load_data(cls, df: pd.DataFrame):
+        """
+        Loads the latest market data entry to the database.
+
+        Args:
+            df: a pd.Dataframe containing the latest stock data
+        """
 
         entry_dict = cls._prepare_data_dict(df)
 
+        # Create the base Postgres Insert statement
+        stmt = insert(Stock).values(entry_dict)
+
+        # The Upsert Logic
+        upsert_stmt = stmt.on_conflict_do_update(
+            index_elements=['ticker', 'trade_date'],
+            set_={
+                col: getattr(stmt.excluded, col)
+                for col in entry_dict.keys()
+                if col not in ['ticker', 'trade_date']
+            }
+        )
+
         try:
-            # Create the base Postgres Insert statement
-            stmt = insert(Stock).values(entry_dict)
-
-            # The Upsert Logic
-            upsert_stmt = stmt.on_conflict_do_update(
-                index_elements=['ticker', 'trade_date'],
-                set_={
-                    col: getattr(stmt.excluded, col)
-                    for col in entry_dict.keys()
-                    if col not in ['ticker', 'trade_date']
-                }
-            )
-
             # Execute and Commit
             db.session.execute(upsert_stmt)
             db.session.commit()

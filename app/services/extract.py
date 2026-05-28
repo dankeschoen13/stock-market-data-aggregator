@@ -142,7 +142,7 @@ load_dotenv()
 if __name__ == "__main__":
     MY_API_KEY = os.environ.get('FMP_KEY')
 
-    dataframe = fetch_historical_data("AAPL", MY_API_KEY)
+    dataframe = fetch_latest_stock_data("AAPL", MY_API_KEY)
 
     if dataframe is not None:
         print(dataframe.tail(10))
