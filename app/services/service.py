@@ -1,8 +1,7 @@
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert
 from app.extensions import db
-from app.models import Stock
-from app.services import fetch_latest_stock_data
+from app.models import Stock, TrackedTicker
 
 import pandas as pd
 import numpy as np
@@ -10,10 +9,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class StockSvc:
+class MktDataSvc:
 
     @classmethod
-    def _active_messages_query(cls):
+    def _active_mktdata_query(cls):
 
         return db.select(Stock)
 
