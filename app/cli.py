@@ -1,12 +1,52 @@
 from flask.cli import with_appcontext
-from app.services import TickerSvc
+from app.services import MktDataSvc, TickerSvc, fetch_latest_stock_data
 from app.constants import TickerSets
-import click
+import pandas as pd
+import click, os
+
 
 @click.command(name='get-stock-data')
 @with_appcontext
 def get_stock_data_command():
-    pass
+    """
+    Fetches daily data for all active tickers and loads it into the database.
+    """
+
+    tickers = TickerSvc.get_active_tickers()
+
+    if not tickers:
+        click.echo("No active tickers found in the database to update.")
+        return
+
+    click.echo(f"Starting market data update for {len(tickers)} tickers...")
+
+    for symbol in tickers:
+        click.echo(f"Fetching data for {symbol.ticker}...")
+
+        try:
+            # 1. Extract
+            stock_data = fetch_latest_stock_data(symbol.ticker, os.environ.get('FMP_KEY'))
+
+            # 2. Validate
+            if isinstance(stock_data, pd.DataFrame):
+
+            # 3. Load
+                MktDataSvc.load_data(stock_data)
+                click.secho(
+                    f"  ✔ Success! {symbol.ticker} data updated.",
+                    fg="green"
+                )
+            else:
+                click.secho(
+                    f"  ✖ Failed to extract valid data for {symbol.ticker}.",
+                    fg="yellow"
+                )
+
+        except Exception as e:
+            # Catch unexpected extraction network errors or database SQLAlchemyErrors
+            click.secho(f"  ! Critical error processing {symbol.ticker}: {e}", fg="red", err=True)
+
+    click.echo("Market data update complete!")
 
 
 @click.command(name='seed-tickers')
@@ -38,3 +78,4 @@ def seed_tickers_command():
                        err=True)
     else:
         click.echo("All tickers are already present in the database. No changes made.")
+        
