@@ -78,4 +78,10 @@ def seed_tickers_command():
                        err=True)
     else:
         click.echo("All tickers are already present in the database. No changes made.")
-        
+
+def register_cli_commands(app):
+    """
+    Registers all background CLI tasks to the Flask app.
+    """
+    app.cli.add_command(get_stock_data_command)
+    app.cli.add_command(seed_tickers_command)
