@@ -91,8 +91,8 @@ class MktDataSvc:
             db.session.commit()
 
         except SQLAlchemyError as e:
-
             logger.error(f"Database transaction failed for {entry_dict.get('ticker')}: {e}")
+
             db.session.rollback()
             raise ValueError(f"Failed to load data for {entry_dict.get('ticker')}")
 
