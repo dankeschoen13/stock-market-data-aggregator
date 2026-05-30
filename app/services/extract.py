@@ -48,6 +48,7 @@ def fetch_latest_stock_data(ticker, api_key) -> pd.DataFrame | None:
 
         # 4. Rename columns to match the current database
         df = df.rename(columns={
+            'symbol': 'ticker',
             'date': 'trade_date',
             'open': 'open_price',
             'close': 'close_price',
@@ -131,7 +132,7 @@ def add_rsi(df: pd.DataFrame) -> pd.DataFrame:
     rs = avg_gain / avg_loss
 
     # RSI Formula
-    df['rsi'] = 100 - (100 / (1 + rs))
+    df['rsi_14'] = 100 - (100 / (1 + rs))
 
     return df
 
