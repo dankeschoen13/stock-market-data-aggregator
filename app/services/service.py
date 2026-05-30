@@ -127,7 +127,7 @@ class TickerSvc:
         return db.session.execute(query).scalar_one_or_none()
 
     @classmethod
-    def add_new_ticker(cls, ticker_symbol: str, auto_commit: bool = False) -> bool:
+    def add_new_ticker(cls, ticker_symbol: str, auto_commit: bool = True) -> bool:
         """
         Attempts to add a new ticker using Postgres ON CONFLICT DO NOTHING.
 
