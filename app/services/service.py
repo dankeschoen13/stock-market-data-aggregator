@@ -127,12 +127,14 @@ class TickerSvc:
         return db.session.execute(query).scalar_one_or_none()
 
     @classmethod
-    def add_new_ticker(cls, ticker_symbol: str) -> bool:
+    def add_new_ticker(cls, ticker_symbol: str, auto_commit: bool = False) -> bool:
         """
         Attempts to add a new ticker using Postgres ON CONFLICT DO NOTHING.
 
         Args:
             ticker_symbol: The stock ticker that needs to be added
+            auto_commit: Default `false`. Automatically commits new session additions
+                to the database if `true`.
 
         Returns:
             bool: True if inserted, False if it was ignored (already exists).
@@ -148,7 +150,8 @@ class TickerSvc:
 
         try:
             result = db.session.execute(stmt_w_ignore)
-            db.session.commit()
+            if auto_commit:
+                db.session.commit()
 
         except SQLAlchemyError as e:
             db.session.rollback()
@@ -159,3 +162,21 @@ class TickerSvc:
         inserted_id = result.scalar()
 
         return inserted_id is not None
+
+    @classmethod
+    def save_changes(cls) -> tuple[bool, str | None]:
+        """
+        Commits any pending session changes to the database safely.
+
+        Returns:
+            tuple[bool, str | None]: Boolean value and error string
+            if failed or None if successful
+        """
+        try:
+            db.session.commit()
+
+        except Exception as e:
+            db.session.rollback()
+            return False, str(e)
+
+        return True, None
