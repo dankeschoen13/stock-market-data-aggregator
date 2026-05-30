@@ -1,10 +1,7 @@
-import click
-from app.services import TickerSvc
 from flask.cli import with_appcontext
-
-TICKERS_1 = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOG']
-TICKERS_2 = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'BRK.B', 'JPM', 'V']
-
+from app.services import TickerSvc
+from app.constants import TickerSets
+import click
 
 @click.command(name='get-stock-data')
 @with_appcontext
@@ -19,7 +16,7 @@ def seed_tickers_command():
     Seeds the TrackedTicker table with an initial batch of popular stocks.
     """
 
-    initial_tickers = TICKERS_2
+    initial_tickers = TickerSets.SET_B
     added_count = 0
 
     # 1. Loop through the list of initial tickers and add them to session
@@ -30,7 +27,7 @@ def seed_tickers_command():
             added_count += 1
             click.echo(f"Queued {ticker_symbol} for insertion.")
 
-    # 2. Commit tickers added to session to the database if there's any
+    # 2. Commit session tickers to the database if there's any
     if added_count > 0:
         success, error_msg = TickerSvc.save_changes()
 
