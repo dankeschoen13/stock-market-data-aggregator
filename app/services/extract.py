@@ -1,7 +1,7 @@
+from dotenv import load_dotenv
 import requests
 import pandas as pd
 import os
-from dotenv import load_dotenv
 
 def fetch_latest_stock_data(ticker, api_key) -> pd.DataFrame | None:
     """
