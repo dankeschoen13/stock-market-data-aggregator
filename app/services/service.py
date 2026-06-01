@@ -98,6 +98,24 @@ class MktDataSvc:
             raise ValueError(f"Failed to load data for {entry_dict.get('ticker')}")
 
 
+    @classmethod
+    def get_latest_data(cls, ticker_symbol: str) -> Stock | None:
+        """
+        Pulls the latest market data from the database
+
+        Args:
+            ticker_symbol: the ticker of the stock data need to be pulled
+
+        Returns:
+            Stock | None: A Stock scalar or None
+        """
+        query = cls._active_mktdata_query().where(
+            Stock.ticker == ticker_symbol
+        ).order_by(Stock.trade_date.desc())
+
+        return db.session.scalars(query).first()
+
+
 class TickerSvc:
 
     @classmethod
