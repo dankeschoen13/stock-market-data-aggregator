@@ -1,5 +1,6 @@
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import update
 from app.extensions import db
 from app.models import Stock, TrackedTicker
 
@@ -155,7 +156,7 @@ class TickerSvc:
 
         except SQLAlchemyError as e:
             db.session.rollback()
-
+            # Log error
             logger.error(f"Database error while adding ticker {ticker_symbol}. Error: {e}")
             raise ValueError(f"Failed to add ticker{ticker_symbol}")
 
@@ -180,3 +181,34 @@ class TickerSvc:
             return False, str(e)
 
         return True, None
+
+    @classmethod
+    def deactivate_tickers(cls, ticker_symbols) -> int:
+        """
+        Performs a bulk soft-delete on a list of tickers.
+        Returns the number of rows successfully deactivated.
+        """
+
+        if isinstance(ticker_symbols, str):
+            ticker_symbols = [ticker_symbols]
+
+        # Bulk update statement
+        update_stmt = (
+            update(TrackedTicker)
+            .where(TrackedTicker.ticker.in_(ticker_symbols))
+            .values(is_active=False)
+        )
+
+        try:
+            # Execute and commit
+            result = db.session.execute(update_stmt)
+            db.session.commit()
+
+            # Return a list of affected rows.
+            return result.rowcount
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            # Log error
+            logger.error(f"Database error while updating tickers table. Error: {e}")
+            raise ValueError(f"Failed to bulk deactivate tickers: {e}")
