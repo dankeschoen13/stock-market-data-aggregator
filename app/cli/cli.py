@@ -71,7 +71,7 @@ def seed_tickers_command():
     Seeds the TrackedTicker table with an initial batch of popular stocks.
     """
 
-    initial_tickers = TickerSets.SET_C
+    initial_tickers = TickerSets.SET_A
     added_count = 0
 
     # 1. Loop through the list of initial tickers and add them to session
@@ -100,9 +100,53 @@ def seed_tickers_command():
             "All tickers are already present in the database. No changes made."
         )
 
+
+@click.command(name='deactivate-ticker')
+@click.argument('tickers', nargs=-1)
+@with_appcontext
+def deactivate_ticker_command(tickers):
+
+    if not tickers:
+        click.echo("Please provide at least one ticker. Example: flask remove-ticker AAPL")
+        return
+
+    tickers_list = list(tickers)
+
+    affected_rows = TickerSvc.deactivate_tickers(tickers_list)
+
+    if affected_rows == len(tickers_list):
+        click.secho(
+            f"Success! Deactivated all {affected_rows} tickers.",
+            fg='green'
+        )
+    else:
+        click.secho(
+            f"Partial Success: Deactivated {affected_rows} out of {len(tickers_list)} requested tickers.",
+            fg='yellow'
+        )
+
+
+@click.command(name='show-active-tickers')
+@with_appcontext
+def show_active_tickers_command():
+
+    active_tickers = TickerSvc.get_active_tickers()
+    if not active_tickers:
+        click.echo("There are currently active tickers!")
+        return
+
+    tickers_list =  [stock.ticker for stock in active_tickers]
+    click.secho(
+        f"Success! Here's a list of all active tickers: {tickers_list}",
+        fg='green'
+    )
+
+
 def register_cli_commands(app):
     """
     Registers all background CLI tasks to the Flask app.
     """
     app.cli.add_command(get_stock_data_command)
     app.cli.add_command(seed_tickers_command)
+    app.cli.add_command(deactivate_ticker_command)
+    app.cli.add_command(show_active_tickers_command)
