@@ -18,6 +18,25 @@ class MktDataSvc:
         return db.select(Stock)
 
     @classmethod
+    def _historical_data_query(cls, ticker_symbol: str, descending: bool = True):
+        """
+        Helper method which returns historical data for the specified ticker_symbol
+        in either descending or ascending order
+
+        :param ticker_symbol: stock ticker
+        :param descending: dictates the order of data. defaults to true.
+        """
+
+        stmt = cls._active_mktdata_query().where(Stock.ticker == ticker_symbol)
+
+        if descending:
+            stmt = stmt.order_by(Stock.trade_date.desc())
+        else:
+            stmt = stmt.order_by(Stock.trade_date.asc())
+
+        return stmt
+
+    @classmethod
     def _prepare_data_dict(cls, df: pd.DataFrame) -> dict:
         """
         Converts the latest DataFrame row into a clean dictionary,
@@ -97,11 +116,11 @@ class MktDataSvc:
             db.session.rollback()
             raise ValueError(f"Failed to load data for {entry_dict.get('ticker')}")
 
-
     @classmethod
     def get_latest_data(cls, ticker_symbol: str) -> Stock | None:
         """
-        Pulls the latest market data from the database
+        Pulls the latest market data for the specified ticker_symbol
+        from the database
 
         Args:
             ticker_symbol: the ticker of the stock data need to be pulled
@@ -109,9 +128,7 @@ class MktDataSvc:
         Returns:
             Stock | None: A Stock scalar or None
         """
-        query = cls._active_mktdata_query().where(
-            Stock.ticker == ticker_symbol
-        ).order_by(Stock.trade_date.desc())
+        query = cls._historical_data_query(ticker_symbol, descending=True)
 
         return db.session.scalars(query).first()
 
