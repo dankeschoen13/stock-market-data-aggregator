@@ -199,6 +199,8 @@ class TickerSvc:
 
         try:
             result = db.session.execute(stmt_w_ignore)
+            inserted_id = result.scalar()
+
             if auto_commit:
                 db.session.commit()
 
@@ -207,8 +209,6 @@ class TickerSvc:
             # Log error
             logger.error(f"Database error while adding ticker {ticker_symbol}. Error: {e}")
             raise ValueError(f"Failed to add ticker{ticker_symbol}")
-
-        inserted_id = result.scalar()
 
         return inserted_id is not None
 
