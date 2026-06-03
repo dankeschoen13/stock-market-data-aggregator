@@ -119,7 +119,7 @@ class MktDataSvc:
     @classmethod
     def get_latest_data(cls, ticker_symbol: str) -> Stock | None:
         """
-        Pulls the latest market data for the specified ticker_symbol
+        Pulls the latest market data of the specified ticker
         from the database
 
         Args:
@@ -131,6 +131,19 @@ class MktDataSvc:
         query = cls._historical_data_query(ticker_symbol, descending=True)
 
         return db.session.scalars(query).first()
+
+    @classmethod
+    def get_historical_data(cls, ticker_symbol: str) -> list[Stock]:
+        """
+        Pulls a list of historical market data from the database
+
+        :param ticker_symbol: the requested stock ticker
+        :return: list[Stock] | None: a list of Stock objects or None
+        """
+
+        query = cls._historical_data_query(ticker_symbol, descending=True)
+
+        return db.session.scalars(query).all()
 
 
 class TickerSvc:
