@@ -28,7 +28,7 @@ def get_available_tickers():
     }), 200
 
 @api_bp.get('/data/<str:ticker_symbol>/latest')
-def get_latest_metric(ticker_symbol):
+def get_latest_metrics(ticker_symbol):
 
     latest_data = MktDataSvc.get_latest_data(ticker_symbol)
     
