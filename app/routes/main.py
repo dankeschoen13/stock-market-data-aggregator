@@ -13,7 +13,7 @@ def index():
 
 @api_bp.get('/tickers/active')
 def get_available_tickers():
-    active_tickers = TickerSvc.get_active_tickers()
+    active_tickers = TickerSvc.get_all()
 
     if not active_tickers:
         return jsonify({

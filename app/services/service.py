@@ -149,7 +149,7 @@ class MktDataSvc:
 class TickerSvc:
 
     @classmethod
-    def get_active_tickers(cls) -> list[TrackedTicker]:
+    def get_all(cls) -> list[TrackedTicker]:
         """
         Get a list of all active stock tickers from the db
 
@@ -161,7 +161,7 @@ class TickerSvc:
         return db.session.scalars(query).all()
 
     @classmethod
-    def get_ticker_by_name(cls, ticker_symbol: str) -> TrackedTicker | None:
+    def get_ticker(cls, ticker_symbol: str) -> TrackedTicker | None:
         """
         Get the TrackedTicker based on the ticker string.
 
@@ -176,7 +176,7 @@ class TickerSvc:
         return db.session.execute(query).scalar_one_or_none()
 
     @classmethod
-    def add_new_ticker(cls, ticker_symbol: str, auto_commit: bool = True) -> bool:
+    def add(cls, ticker_symbol: str, auto_commit: bool = True) -> bool:
         """
         Attempts to add a new ticker using Postgres ON CONFLICT DO NOTHING.
 

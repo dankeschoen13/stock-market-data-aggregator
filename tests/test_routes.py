@@ -1,8 +1,8 @@
 from unittest.mock import patch, MagicMock
 
 
-@patch('app.routes.main.TickerSvc.get_active_tickers')
-def test_get_available_tickers(mock_get_active_tickers, client):
+@patch('app.routes.main.TickerSvc.get_all')
+def test_get_available_tickers(mock_svc, client):
     """
     Test if route correctly returns active tracked tickers using a mocked service layer.
     """
@@ -10,8 +10,8 @@ def test_get_available_tickers(mock_get_active_tickers, client):
     # Create a fake object with a '.ticker' attribute
     mock_stock = MagicMock(ticker="AAPL")
 
-    # Define the return value of the mock service
-    mock_get_active_tickers.return_value = [mock_stock]
+    # Define the return value of mock `get_all` service
+    mock_svc.return_value = [mock_stock]
 
     # Call the API
     response = client.get('/api/tickers/active')
@@ -23,4 +23,4 @@ def test_get_available_tickers(mock_get_active_tickers, client):
     assert response.json["meta"]["count"] == len(response.json["data"])
 
     # Strict assertion: Prove the route actually called the svc layer once
-    mock_get_active_tickers.assert_called_once()
+    mock_svc.assert_called_once()

@@ -23,7 +23,7 @@ def get_stock_data_command():
         return
 
     # 1.B | DATA PREP: Get the list of tracked tickers.
-    tickers = TickerSvc.get_active_tickers()
+    tickers = TickerSvc.get_all()
     if not tickers:
         click.echo("No active tickers found in the database to update.")
         return
@@ -76,7 +76,7 @@ def seed_tickers_command():
 
     # 1. Loop through the list of initial tickers and add them to session
     for ticker_symbol in initial_tickers:
-        was_added = TickerSvc.add_new_ticker(ticker_symbol, auto_commit=False)
+        was_added = TickerSvc.add(ticker_symbol, auto_commit=False)
 
         if was_added:
             added_count += 1
@@ -130,7 +130,7 @@ def deactivate_ticker_command(tickers):
 @with_appcontext
 def show_active_tickers_command():
 
-    active_tickers = TickerSvc.get_active_tickers()
+    active_tickers = TickerSvc.get_all()
     if not active_tickers:
         click.echo("There are currently active tickers!")
         return
