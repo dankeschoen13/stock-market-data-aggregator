@@ -1,7 +1,7 @@
 from unittest.mock import patch, MagicMock
 
-
 class TestGetAvailableTickers:
+    """All tests related to the /api/tickers/active endpoint."""
 
     @patch('app.routes.main.TickerSvc.get_all')
     def test_success(self, mock_svc, client):
@@ -27,7 +27,26 @@ class TestGetAvailableTickers:
         # Strict assertion: Prove the route actually called the svc layer once
         mock_svc.assert_called_once()
 
+    @patch('app.routes.main.TickerSvc.get_all')
+    def test_error(self, mock_svc, client):
+        """
+        Test if the route correctly returns an error if there are no tracked tickers.
+        """
+
+        # Define the return value of mock `get_all` service
+        mock_svc.return_value = []
+
+        # Call the API
+        response = client.get('/api/tickers/active')
+
+        # Assertions
+        assert response.status_code == 404
+        assert response.json["status"] == "error"
+
+        mock_svc.assert_called_once()
+
 class TestGetLatestMetrics:
+    """All tests related to the /api/tickers/<ticker>/latest endpoint."""
 
     @patch('app.routes.main.MktDataSvc.get_latest_data')
     def test_success(self, mock_svc, client):
@@ -54,3 +73,21 @@ class TestGetLatestMetrics:
 
         # Strict assertion: Prove the route called the service layer with the right ticker
         mock_svc.assert_called_once_with("AAPL")
+
+    @patch('app.routes.main.MktDataSvc.get_latest_data')
+    def test_error(self, mock_svc, client):
+        """
+        Test if the route correctly returns an error for invalid stock tickers.
+        """
+
+        # Define the return value of mock `get_latest_data` service
+        mock_svc.return_value = None
+
+        # Call the API
+        response = client.get('/api/data/INVALID/latest')
+
+        # Assertions
+        assert response.status_code == 404
+        assert response.json["status"] == "error"
+
+        mock_svc.assert_called_once_with("INVALID")
