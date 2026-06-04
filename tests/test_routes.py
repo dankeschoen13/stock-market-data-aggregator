@@ -1,53 +1,56 @@
 from unittest.mock import patch, MagicMock
 
 
-@patch('app.routes.main.TickerSvc.get_all')
-def test_get_available_tickers(mock_svc, client):
-    """
-    Test if route correctly returns active tracked tickers using a mocked service layer.
-    """
+class TestGetAvailableTickers:
 
-    # Create a fake object with a '.ticker' attribute
-    mock_ticker = MagicMock(ticker="AAPL")
+    @patch('app.routes.main.TickerSvc.get_all')
+    def test_success(self, mock_svc, client):
+        """
+        Test if route correctly returns active tracked tickers using a mocked service layer.
+        """
 
-    # Define the return value of mock `get_all` service
-    mock_svc.return_value = [mock_ticker]
+        # Create a fake object with a '.ticker' attribute
+        mock_ticker = MagicMock(ticker="AAPL")
 
-    # Call the API
-    response = client.get('/api/tickers/active')
+        # Define the return value of mock `get_all` service
+        mock_svc.return_value = [mock_ticker]
 
-    # Assertions
-    assert response.status_code == 200
-    assert response.json["status"] == "success"
-    assert "AAPL" in response.json["data"]
-    assert response.json["meta"]["count"] == len(response.json["data"])
+        # Call the API
+        response = client.get('/api/tickers/active')
 
-    # Strict assertion: Prove the route actually called the svc layer once
-    mock_svc.assert_called_once()
+        # Assertions
+        assert response.status_code == 200
+        assert response.json["status"] == "success"
+        assert "AAPL" in response.json["data"]
+        assert response.json["meta"]["count"] == len(response.json["data"])
 
+        # Strict assertion: Prove the route actually called the svc layer once
+        mock_svc.assert_called_once()
 
-@patch('app.routes.main.MktDataSvc.get_latest_data')
-def test_get_latest_metrics(mock_svc, client):
-    """
-    Test if the route correctly fetches and serializes the latest stock row.
-    """
+class TestGetLatestMetrics:
 
-    mock_stock_data = MagicMock()
-    mock_stock_data.to_dict.return_value = {
-        "ticker": "AAPL",
-        "trade_date": "2026-06-03",
-        "close": 150.00
-    }
+    @patch('app.routes.main.MktDataSvc.get_latest_data')
+    def test_success(self, mock_svc, client):
+        """
+        Test if the route correctly fetches and serializes the latest stock row.
+        """
 
-    mock_svc.return_value = mock_stock_data
+        mock_stock_data = MagicMock()
+        mock_stock_data.to_dict.return_value = {
+            "ticker": "AAPL",
+            "trade_date": "2026-06-03",
+            "close": 150.00
+        }
 
-    response = client.get('/api/data/AAPL/latest')
+        mock_svc.return_value = mock_stock_data
 
-    # Assertions
-    assert response.status_code == 200
-    assert response.json["status"] == "success"
-    assert response.json["data"]["ticker"] == "AAPL"
-    assert response.json["data"]["close"] == 150.00
+        response = client.get('/api/data/AAPL/latest')
 
-    # Strict assertion: Prove the route called the service layer with the right ticker
-    mock_svc.assert_called_once_with("AAPL")
+        # Assertions
+        assert response.status_code == 200
+        assert response.json["status"] == "success"
+        assert response.json["data"]["ticker"] == "AAPL"
+        assert response.json["data"]["close"] == 150.00
+
+        # Strict assertion: Prove the route called the service layer with the right ticker
+        mock_svc.assert_called_once_with("AAPL")
