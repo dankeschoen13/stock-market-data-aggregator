@@ -8,13 +8,14 @@ def app():
     # Pass test configs to the app factory
     app = create_app(test_config={
         "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+        "SQLALCHEMY_DATABASE_URI": "postgresql://marcobernacer@localhost:5432/test_db"
     })
 
     # Set up the database tables before the test runs
     with app.app_context():
         db.create_all()
         yield app
+        db.session.remove()
         db.drop_all()
 
 @pytest.fixture
