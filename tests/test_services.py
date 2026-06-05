@@ -1,11 +1,14 @@
+from sqlalchemy.exc import SQLAlchemyError
 from mock_data import get_mock_aapl_dataframe
 from app.services import MktDataSvc
 from app.models import Stock
 from app.extensions import db
+from unittest.mock import patch
+import pytest
 
 class TestMktDataSvc:
 
-    def test_load_data(self, app):
+    def test_load_data_success(self, app):
 
         # Arrange
         df = get_mock_aapl_dataframe(single_row=True)
@@ -24,6 +27,24 @@ class TestMktDataSvc:
         assert first_record.ticker == "AAPL"
         assert first_record.close_price == df["close_price"].iloc[0]
         assert first_record.rsi_14 == df["rsi_14"].iloc[0]
+
+    @patch('app.services.service.db.session.execute')
+    @patch('app.services.service.db.session.rollback')
+    def test_load_data_handles_database_error(self, mock_rollback, mock_execute, app):
+        """
+        Test that a DB failure triggers a rollback and raises a ValueError.
+        """
+
+        # Arrange: Get mock data and set mock_execute's side effect
+        df = get_mock_aapl_dataframe(single_row=True)
+        mock_execute.side_effect = SQLAlchemyError("Simulated database crash")
+
+        # Service execution and assertion: Catch the expected custom error
+        with pytest.raises(ValueError, match="Failed to load data for AAPL"):
+            MktDataSvc.load_data(df)
+
+        # 4. Verify the side effects
+        mock_rollback.assert_called_once()
 
     def test_get_latest_data(self, app):
         """
@@ -79,5 +100,7 @@ class TestMktDataSvc:
         )
         assert returned_data[0].close_price == sorted_df["close_price"].iloc[0]
         assert returned_data[1].close_price == sorted_df["close_price"].iloc[1]
+
+
 
     
