@@ -1,20 +1,10 @@
 from sqlalchemy.exc import SQLAlchemyError
-from mock_data import get_mock_aapl_dataframe
-from app.services import MktDataSvc
+from app.services import MktDataSvc, TickerSvc
 from app.models import Stock
 from app.extensions import db
 from unittest.mock import patch
-import pandas as pd
+import mock_data
 import pytest
-
-def seed_stockdb_with_mock_data(df: pd.DataFrame):
-    """
-    Iterates through a DataFrame and loads rows sequentially into the database
-    to bypass the single-row limitation of the load_data service.
-    """
-
-    for i in range(len(df)):
-        MktDataSvc.load_data(df.iloc[[i]])
 
 class TestMktDataSvc:
 
@@ -24,7 +14,7 @@ class TestMktDataSvc:
         """
 
         # Arrange
-        df = get_mock_aapl_dataframe(single_row=True)
+        df = mock_data.get_mock_aapl_dataframe(single_row=True)
 
         # Service Execution
         MktDataSvc.load_data(df)
@@ -49,7 +39,7 @@ class TestMktDataSvc:
         """
 
         # Arrange: Get mock data and set mock_execute's side effect
-        df = get_mock_aapl_dataframe(single_row=True)
+        df = mock_data.get_mock_aapl_dataframe(single_row=True)
         mock_execute.side_effect = SQLAlchemyError("Simulated database crash")
 
         # Service execution and assertion: Catch the expected custom error
@@ -65,9 +55,8 @@ class TestMktDataSvc:
         """
 
         # Arrange: create multiple rows
-        df = get_mock_aapl_dataframe(single_row=False)
-
-        seed_stockdb_with_mock_data(df)
+        df = mock_data.get_mock_aapl_dataframe(single_row=False)
+        mock_data.seed_stockdb_with_mock_data(df)
 
         # Service Execution
         returned_data = MktDataSvc.get_latest_data("AAPL")
@@ -92,7 +81,7 @@ class TestMktDataSvc:
         """
 
         # Arrange data
-        df = get_mock_aapl_dataframe(single_row=True)
+        df = mock_data.get_mock_aapl_dataframe(single_row=True)
         MktDataSvc.load_data(df)
 
         # Service Execution
@@ -108,8 +97,8 @@ class TestMktDataSvc:
         """
 
         # Arrange: create multiple rows
-        df = get_mock_aapl_dataframe(single_row=False)
-        seed_stockdb_with_mock_data(df)
+        df = mock_data.get_mock_aapl_dataframe(single_row=False)
+        mock_data.seed_stockdb_with_mock_data(df)
 
         # Service Execution
         returned_data = MktDataSvc.get_historical_data("AAPL")
@@ -133,8 +122,8 @@ class TestMktDataSvc:
         """
 
         # Arrange data
-        df = get_mock_aapl_dataframe(single_row=False)
-        seed_stockdb_with_mock_data(df)
+        df = mock_data.get_mock_aapl_dataframe(single_row=False)
+        mock_data.seed_stockdb_with_mock_data(df)
 
         # Service Execution
         returned_data = MktDataSvc.get_historical_data("MSFT")

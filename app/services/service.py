@@ -181,7 +181,7 @@ class TickerSvc:
             db.session.rollback()
             # Log error
             logger.error(f"Database error while adding ticker {ticker_symbol}. Error: {e}")
-            raise ValueError(f"Failed to add ticker{ticker_symbol}")
+            raise ValueError(f"Failed to add ticker {ticker_symbol}")
 
         return inserted_id is not None
 

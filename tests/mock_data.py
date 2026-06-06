@@ -1,5 +1,24 @@
+from app.services import MktDataSvc,TickerSvc
 import pandas as pd
 import datetime
+
+def seed_stockdb_with_mock_data(df: pd.DataFrame):
+    """
+    Iterates through a DataFrame and loads rows sequentially into the database
+    to bypass the single-row limitation of the load_data service.
+    """
+
+    for i in range(len(df)):
+        MktDataSvc.load_data(df.iloc[[i]])
+
+def seed_stockdb_with_mock_tickers(tickers: list):
+    """
+    Iterates through a list of tickers and sequentially adds them into the db
+    """
+    for ticker in tickers:
+        TickerSvc.add(ticker, auto_commit=False)
+
+    TickerSvc.save_changes()
 
 def get_mock_aapl_dataframe(single_row: bool = True) -> pd.DataFrame:
     """
