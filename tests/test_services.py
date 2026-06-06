@@ -4,9 +4,17 @@ from app.services import MktDataSvc
 from app.models import Stock
 from app.extensions import db
 from unittest.mock import patch
+import pandas as pd
 import pytest
 
+def seed_database_with_mock_data(df: pd.DataFrame):
+    """
+    Iterates through a DataFrame and loads rows sequentially into the database
+    to bypass the single-row limitation of the load_data service.
+    """
 
+    for i in range(len(df)):
+        MktDataSvc.load_data(df.iloc[[i]])
 
 class TestMktDataSvc:
 
@@ -59,9 +67,7 @@ class TestMktDataSvc:
         # Arrange: create multiple rows
         df = get_mock_aapl_dataframe(single_row=False)
 
-        for i in range(len(df)):
-            single_row_df = df.iloc[[i]]
-            MktDataSvc.load_data(single_row_df)
+        seed_database_with_mock_data(df)
 
         # Service Execution
         returned_data = MktDataSvc.get_latest_data("AAPL")
@@ -103,9 +109,7 @@ class TestMktDataSvc:
 
         # Arrange: create multiple rows
         df = get_mock_aapl_dataframe(single_row=False)
-        for i in range(len(df)):
-            single_row_df = df.iloc[[i]]
-            MktDataSvc.load_data(single_row_df)
+        seed_database_with_mock_data(df)
 
         # Service Execution
         returned_data = MktDataSvc.get_historical_data("AAPL")
@@ -130,9 +134,7 @@ class TestMktDataSvc:
 
         # Arrange data
         df = get_mock_aapl_dataframe(single_row=False)
-        for i in range(len(df)):
-            single_row_df = df.iloc[[i]]
-            MktDataSvc.load_data(single_row_df)
+        seed_database_with_mock_data(df)
 
         # Service Execution
         returned_data = MktDataSvc.get_historical_data("MSFT")
