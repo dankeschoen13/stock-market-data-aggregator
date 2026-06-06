@@ -149,33 +149,6 @@ class MktDataSvc:
 class TickerSvc:
 
     @classmethod
-    def get_all(cls) -> list[TrackedTicker]:
-        """
-        Get a list of all active stock tickers from the db
-
-        Returns:
-            list[TrackedTicker]: A list of TrackedTicker objects
-        """
-        query = db.select(TrackedTicker).where(TrackedTicker.is_active == True)
-
-        return db.session.scalars(query).all()
-
-    @classmethod
-    def get_ticker(cls, ticker_symbol: str) -> TrackedTicker | None:
-        """
-        Get the TrackedTicker based on the ticker string.
-
-        Args:
-            ticker_symbol: The stock ticker that needs to be pulled
-
-        Returns:
-           TrackedTicker: The matching TrackedTicker
-        """
-        query = db.select(TrackedTicker).where(TrackedTicker.ticker == ticker_symbol)
-
-        return db.session.execute(query).scalar_one_or_none()
-
-    @classmethod
     def add(cls, ticker_symbol: str, auto_commit: bool = True) -> bool:
         """
         Attempts to add a new ticker using Postgres ON CONFLICT DO NOTHING.
@@ -229,6 +202,33 @@ class TickerSvc:
             return False, str(e)
 
         return True, None
+
+    @classmethod
+    def get_all(cls) -> list[TrackedTicker]:
+        """
+        Get a list of all active stock tickers from the db
+
+        Returns:
+            list[TrackedTicker]: A list of TrackedTicker objects
+        """
+        query = db.select(TrackedTicker).where(TrackedTicker.is_active == True)
+
+        return db.session.scalars(query).all()
+
+    @classmethod
+    def get_ticker(cls, ticker_symbol: str) -> TrackedTicker | None:
+        """
+        Get the TrackedTicker based on the ticker string.
+
+        Args:
+            ticker_symbol: The stock ticker that needs to be pulled
+
+        Returns:
+           TrackedTicker: The matching TrackedTicker
+        """
+        query = db.select(TrackedTicker).where(TrackedTicker.ticker == ticker_symbol)
+
+        return db.session.execute(query).scalar_one_or_none()
 
     @classmethod
     def deactivate_tickers(cls, ticker_symbols) -> int:
