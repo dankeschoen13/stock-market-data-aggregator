@@ -6,9 +6,14 @@ from app.extensions import db
 from unittest.mock import patch
 import pytest
 
+
+
 class TestMktDataSvc:
 
     def test_load_data_success(self, app):
+        """
+        Test that the service correctly loads the given pandas df to database.
+        """
 
         # Arrange
         df = get_mock_aapl_dataframe(single_row=True)
@@ -74,6 +79,22 @@ class TestMktDataSvc:
         assert returned_data.close_price == sorted_df["close_price"].iloc[0]
         assert returned_data.rsi_14 == sorted_df["rsi_14"].iloc[0]
 
+    def test_get_latest_data_returns_none(self, app):
+        """
+        Test that the service correctly returns None when a non-existent
+        ticker_symbol is passed in.
+        """
+
+        # Arrange data
+        df = get_mock_aapl_dataframe(single_row=True)
+        MktDataSvc.load_data(df)
+
+        # Service Execution
+        returned_data = MktDataSvc.get_latest_data("MSFT")
+
+        # Assertions
+        assert returned_data is None
+
     def test_get_historical_data(self, app):
         """
         Test that the service correctly fetches sorted historical data of
@@ -101,6 +122,23 @@ class TestMktDataSvc:
         assert returned_data[0].close_price == sorted_df["close_price"].iloc[0]
         assert returned_data[1].close_price == sorted_df["close_price"].iloc[1]
 
+    def test_get_historical_data_returns_empty_list(self, app):
+        """
+        Test that the service correctly returns an empty list when a non-existent
+        ticker_symbol is passed in.
+        """
+
+        # Arrange data
+        df = get_mock_aapl_dataframe(single_row=False)
+        for i in range(len(df)):
+            single_row_df = df.iloc[[i]]
+            MktDataSvc.load_data(single_row_df)
+
+        # Service Execution
+        returned_data = MktDataSvc.get_historical_data("MSFT")
+
+        # Assertions
+        assert len(returned_data) == 0
 
 
     
