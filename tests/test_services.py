@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
-def seed_database_with_mock_data(df: pd.DataFrame):
+def seed_stockdb_with_mock_data(df: pd.DataFrame):
     """
     Iterates through a DataFrame and loads rows sequentially into the database
     to bypass the single-row limitation of the load_data service.
@@ -67,7 +67,7 @@ class TestMktDataSvc:
         # Arrange: create multiple rows
         df = get_mock_aapl_dataframe(single_row=False)
 
-        seed_database_with_mock_data(df)
+        seed_stockdb_with_mock_data(df)
 
         # Service Execution
         returned_data = MktDataSvc.get_latest_data("AAPL")
@@ -109,7 +109,7 @@ class TestMktDataSvc:
 
         # Arrange: create multiple rows
         df = get_mock_aapl_dataframe(single_row=False)
-        seed_database_with_mock_data(df)
+        seed_stockdb_with_mock_data(df)
 
         # Service Execution
         returned_data = MktDataSvc.get_historical_data("AAPL")
@@ -134,13 +134,10 @@ class TestMktDataSvc:
 
         # Arrange data
         df = get_mock_aapl_dataframe(single_row=False)
-        seed_database_with_mock_data(df)
+        seed_stockdb_with_mock_data(df)
 
         # Service Execution
         returned_data = MktDataSvc.get_historical_data("MSFT")
 
         # Assertions
         assert len(returned_data) == 0
-
-
-    
