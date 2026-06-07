@@ -58,3 +58,45 @@ class TestAdd:
 
         # Assertion
         mock_rollback.assert_called_once()
+
+class TestSaveChanges:
+
+    def test_save_changes_success(self, app):
+        """
+        Test that pending changes are successfully committed and returns True.
+        """
+
+        # Arrange
+        TickerSvc.add("AAPL", auto_commit=False)
+
+        # Service Execution
+        success, error_message = TickerSvc.save_changes()
+
+        # Assertions
+        assert success is True
+        assert error_message is None
+
+        # Optional: Verify it actually made it to the database
+        saved_data = db.session.scalars(db.select(TrackedTicker)).all()
+        assert len(saved_data) == 1
+
+    @patch('app.services.service.db.session.commit')  # Update path if needed!
+    @patch('app.services.service.db.session.rollback')
+    def test_save_changes_handles_error(self, mock_rollback, mock_commit, app):
+        """
+        Test that a database failure during commit triggers a rollback and returns False.
+        """
+
+        # Arrange
+        TickerSvc.add("AAPL", auto_commit=False)
+        mock_commit.side_effect = Exception("Simulated crash!")
+
+        # Service Execution
+        success, error_message = TickerSvc.save_changes()
+
+        # Assertions
+        assert success is False
+        assert error_message == "Simulated crash!"
+        mock_rollback.assert_called_once()
+
+
