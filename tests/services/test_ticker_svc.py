@@ -2,8 +2,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.services import TickerSvc
 from app.models import TrackedTicker
 from app.extensions import db
+from app.constants import TickerSets
 from unittest.mock import patch
 import pytest
+import mock_data
 
 class TestAdd:
 
@@ -99,4 +101,56 @@ class TestSaveChanges:
         assert error_message == "Simulated crash!"
         mock_rollback.assert_called_once()
 
+class TestGetAll:
 
+    def test_success_returns_tracked_ticker_list(self, app):
+        """
+        Test that all active tickers are successfully retrieved.
+        """
+
+        # Arrange
+        mock_data.seed_stockdb_with_mock_tickers(TickerSets.SET_A)
+
+        # Service Execution
+        returned_list = TickerSvc.get_all()
+
+        # Assertions
+        assert len(returned_list) == len(TickerSets.SET_A)
+
+        # Extract all returned strings and verify the entire set is present
+        returned_tickers = [t.ticker for t in returned_list]
+        for expected_ticker in TickerSets.SET_A:
+            assert expected_ticker in returned_tickers
+
+    def test_excludes_inactive_tickers(self, app):
+        """
+        Test that tickers marked as is_active=False are not returned.
+        """
+
+        # Arrange: Seed two tickers
+        mock_data.seed_stockdb_with_mock_tickers(["AAPL", "MSFT"])
+
+        # Manually sabotage one ticker to be inactive
+        msft_record = db.session.scalar(
+            db.select(TrackedTicker).where(TrackedTicker.ticker == "MSFT")
+        )
+        msft_record.is_active = False
+        db.session.commit()
+
+        # Service Execution
+        returned_list = TickerSvc.get_all()
+
+        # Assertions: Should only return AAPL
+        assert len(returned_list) == 1
+        assert returned_list[0].ticker == "AAPL"
+
+    def test_returns_empty_list(self, app):
+        """
+        Test that an empty list is returned when no active tickers exist.
+        """
+
+        # Service Execution
+        returned_list = TickerSvc.get_all()
+
+        # Assertions
+        assert len(returned_list) == 0
