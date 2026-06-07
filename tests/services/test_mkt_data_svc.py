@@ -1,14 +1,14 @@
 from sqlalchemy.exc import SQLAlchemyError
-from app.services import MktDataSvc, TickerSvc
-from app.models import Stock, TrackedTicker
+from app.services import MktDataSvc
+from app.models import Stock
 from app.extensions import db
 from unittest.mock import patch
 import mock_data
 import pytest
 
-class TestMktDataSvc:
+class TestLoadData:
 
-    def test_load_data_success(self, app):
+    def test_success(self, app):
         """
         Test that the service correctly loads the given pandas df to database.
         """
@@ -33,7 +33,7 @@ class TestMktDataSvc:
 
     @patch('app.services.service.db.session.execute')
     @patch('app.services.service.db.session.rollback')
-    def test_load_data_handles_database_error(self, mock_rollback, mock_execute, app):
+    def test_handles_database_error(self, mock_rollback, mock_execute, app):
         """
         Test that a DB failure triggers a rollback and raises a ValueError.
         """
@@ -49,7 +49,9 @@ class TestMktDataSvc:
         # Verify the side effects
         mock_rollback.assert_called_once()
 
-    def test_get_latest_data(self, app):
+class TestGetLatestData:
+
+    def test_success_returns_stock_obj(self, app):
         """
         Test that the service correctly fetches and sorts the most recent date.
         """
@@ -74,7 +76,7 @@ class TestMktDataSvc:
         assert returned_data.close_price == sorted_df["close_price"].iloc[0]
         assert returned_data.rsi_14 == sorted_df["rsi_14"].iloc[0]
 
-    def test_get_latest_data_returns_none(self, app):
+    def test_returns_none(self, app):
         """
         Test that the service correctly returns None when a non-existent
         ticker_symbol is passed in.
@@ -90,7 +92,9 @@ class TestMktDataSvc:
         # Assertions
         assert returned_data is None
 
-    def test_get_historical_data(self, app):
+class TestGetHistoricalData:
+
+    def test_success_returns_list_of_stock_objects(self, app):
         """
         Test that the service correctly fetches sorted historical data of
         given stock ticker
@@ -115,7 +119,7 @@ class TestMktDataSvc:
         assert returned_data[0].close_price == sorted_df["close_price"].iloc[0]
         assert returned_data[1].close_price == sorted_df["close_price"].iloc[1]
 
-    def test_get_historical_data_returns_empty_list(self, app):
+    def test_returns_empty_list(self, app):
         """
         Test that the service correctly returns an empty list when a non-existent
         ticker_symbol is passed in.
@@ -130,57 +134,3 @@ class TestMktDataSvc:
 
         # Assertions
         assert len(returned_data) == 0
-
-class TestTickerSvc:
-
-    def test_add_new_ticker_success(self, app):
-        """
-        Test that a brand-new ticker is successfully added and returns True.
-        """
-
-        # Service execution
-        result = TickerSvc.add("AAPL", auto_commit=True)
-
-        # Assert service output
-        assert result is True
-
-        # Assert DB status
-        saved_data = db.session.scalars(db.select(TrackedTicker)).all()
-        assert len(saved_data) == 1
-        assert saved_data[0].ticker == "AAPL"
-        assert saved_data[0].is_active is True
-
-    def test_add_duplicate_ticker_ignored(self, app):
-        """
-        Test that adding an existing ticker is ignored and returns False.
-        """
-
-        # Arrange: Pre-seed the database with AAPL
-        TickerSvc.add("AAPL", auto_commit=True)
-
-        # Service Execution - Add AAPL again.
-        result = TickerSvc.add("AAPL", auto_commit=True)
-
-        # Assert if the second attempt to add AAPL is ignored
-        assert result is False
-
-        # Assert DB status
-        saved_data = db.session.scalars(db.select(TrackedTicker)).all()
-        assert len(saved_data) == 1
-
-    @patch('app.services.service.db.session.execute')
-    @patch('app.services.service.db.session.rollback')
-    def test_add_handles_database_error(self, mock_rollback, mock_execute, app):
-        """
-        Test that a DB failure triggers a rollback and raises a ValueError.
-        """
-
-        # Arrange
-        mock_execute.side_effect = SQLAlchemyError("Simulated database crash!")
-
-        # Service Execution
-        with pytest.raises(ValueError, match="Failed to add ticker AAPL"):
-            TickerSvc.add("AAPL", auto_commit=True)
-
-        # Assertion
-        mock_rollback.assert_called_once()
