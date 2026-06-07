@@ -154,3 +154,37 @@ class TestGetAll:
 
         # Assertions
         assert len(returned_list) == 0
+
+
+class TestGetTicker:
+
+    def test_success_returns_ticker(self, app):
+        """
+        Test that querying an existing ticker symbol successfully
+        returns the corresponding TrackedTicker object.
+        """
+        # Arrange
+        mock_data.seed_stockdb_with_mock_tickers(["AAPL"])
+
+        # Service Execution
+        returned_ticker = TickerSvc.get_ticker("AAPL")
+
+        # Assertions
+        assert returned_ticker is not None
+        assert returned_ticker.ticker == "AAPL"
+        assert returned_ticker.is_active is True
+
+    def test_returns_none_for_nonexistent_ticker(self, app):
+        """
+        Test that querying a non-existent ticker symbol safely returns None,
+        even if other tickers exist in the database.
+        """
+
+        # Arrange
+        mock_data.seed_stockdb_with_mock_tickers(["MSFT", "GOOGL"])
+
+        # Service Execution
+        returned_ticker = TickerSvc.get_ticker("AAPL")
+
+        # Assertions
+        assert returned_ticker is None
