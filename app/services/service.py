@@ -231,7 +231,7 @@ class TickerSvc:
         return db.session.execute(query).scalar_one_or_none()
 
     @classmethod
-    def deactivate_tickers(cls, ticker_symbols) -> int:
+    def deactivate_tickers(cls, ticker_symbols: list | str) -> int:
         """
         Performs a bulk soft-delete on a list of tickers.
         Returns the number of rows successfully deactivated.
