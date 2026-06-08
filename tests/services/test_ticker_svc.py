@@ -82,7 +82,7 @@ class TestSaveChanges:
         saved_data = db.session.scalars(db.select(TrackedTicker)).all()
         assert len(saved_data) == 1
 
-    @patch('app.services.service.db.session.commit')  # Update path if needed!
+    @patch('app.services.service.db.session.commit')
     @patch('app.services.service.db.session.rollback')
     def test_save_changes_handles_error(self, mock_rollback, mock_commit, app):
         """
@@ -252,4 +252,17 @@ class TestDeactivateTicker:
 
         # Assertions
         assert returned_data == 0
+
+    @patch('app.services.service.db.session.execute')
+    @patch('app.services.service.db.session.rollback')
+    def test_handles_database_error(self, mock_rollback, mock_execute, app):
+
+        # Arrange
+        mock_execute.side_effect = SQLAlchemyError("Simulated database crash!")
+
+        # Service execution
+        with pytest.raises(ValueError, match="Failed to deactivate tickers: Simulated database crash!"):
+            TickerSvc.deactivate_tickers('AAPL')
+
+        mock_rollback.assert_called_once()
 
