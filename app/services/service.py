@@ -259,4 +259,4 @@ class TickerSvc:
             db.session.rollback()
             # Log error
             logger.error(f"Database error while updating tickers table. Error: {e}")
-            raise ValueError(f"Failed to bulk deactivate tickers: {e}")
+            raise ValueError(f"Failed to deactivate tickers: {e}")
