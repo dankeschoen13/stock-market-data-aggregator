@@ -188,3 +188,68 @@ class TestGetTicker:
 
         # Assertions
         assert returned_ticker is None
+
+class TestDeactivateTicker:
+
+    def test_batch_success_returns_row_count(self, app):
+
+        # Arrange
+        mock_data.seed_stockdb_with_mock_tickers(['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL'])
+        tickers_for_deactivation = ['AAPL', 'MSFT']
+
+        # Service Execution
+        returned_data = TickerSvc.deactivate_tickers(tickers_for_deactivation)
+
+        # Assertions
+        assert returned_data == 2
+
+        active_tickers = db.session.scalars(
+            db.select(TrackedTicker).where(TrackedTicker.is_active == True)
+        ).all()
+        active_ticker_symbols = [t.ticker for t in active_tickers]
+
+        for ticker in tickers_for_deactivation:
+            assert ticker not in active_ticker_symbols
+
+        inactive_tickers = db.session.scalars(
+            db.select(TrackedTicker).where(TrackedTicker.is_active == False)
+        ).all()
+        inactive_ticker_symbols = [t.ticker for t in inactive_tickers]
+
+        for ticker in tickers_for_deactivation:
+            assert ticker in inactive_ticker_symbols
+
+    def test_string_input_success_returns_row_count(self, app):
+        """
+        Test that passing a single string successfully deactivates it.
+        """
+
+        # Arrange
+        mock_data.seed_stockdb_with_mock_tickers(['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL'])
+
+        # Service Execution
+        returned_data = TickerSvc.deactivate_tickers('AMZN')
+
+        # Assertions
+        assert returned_data == 1
+
+        ticker_record = db.session.scalar(
+            db.select(TrackedTicker).where(TrackedTicker.ticker == 'AMZN')
+        )
+
+        assert ticker_record.is_active is False
+
+    def test_nonexistent_ticker_returns_zero(self, app):
+        """
+        Test that passing a non-existent ticker safely returns 0.
+        """
+
+        # Arrange
+        mock_data.seed_stockdb_with_mock_tickers(['AAPL'])
+
+        # Service Execution
+        returned_data = TickerSvc.deactivate_tickers('MSFT')
+
+        # Assertions
+        assert returned_data == 0
+
