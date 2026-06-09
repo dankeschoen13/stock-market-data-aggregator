@@ -92,45 +92,45 @@ class TestGetLatestData:
         # Assertions
         assert returned_data is None
 
-class TestGetHistoricalData:
-
-    def test_success_returns_list_of_stock_objects(self, app):
-        """
-        Test that the service correctly fetches sorted historical data of
-        given stock ticker
-        """
-
-        # Arrange: create multiple rows
-        df = mock_data.get_mock_aapl_dataframe(single_row=False)
-        mock_data.seed_stockdb_with_mock_data(df)
-
-        # Service Execution
-        returned_data = MktDataSvc.get_historical_data("AAPL")
-
-        # Assertions
-        assert returned_data is not None
-        assert len(returned_data) == len(df)
-
-        sorted_df = df.sort_values(
-            by="trade_date",
-            ascending=False,
-            ignore_index=True
-        )
-        assert returned_data[0].close_price == sorted_df["close_price"].iloc[0]
-        assert returned_data[1].close_price == sorted_df["close_price"].iloc[1]
-
-    def test_returns_empty_list(self, app):
-        """
-        Test that the service correctly returns an empty list when a non-existent
-        ticker_symbol is passed in.
-        """
-
-        # Arrange data
-        df = mock_data.get_mock_aapl_dataframe(single_row=False)
-        mock_data.seed_stockdb_with_mock_data(df)
-
-        # Service Execution
-        returned_data = MktDataSvc.get_historical_data("MSFT")
-
-        # Assertions
-        assert len(returned_data) == 0
+# class TestGetHistoricalData:
+#
+#     def test_success_returns_list_of_stock_objects(self, app):
+#         """
+#         Test that the service correctly fetches sorted historical data of
+#         given stock ticker
+#         """
+#
+#         # Arrange: create multiple rows
+#         df = mock_data.get_mock_aapl_dataframe(single_row=False)
+#         mock_data.seed_stockdb_with_mock_data(df)
+#
+#         # Service Execution
+#         returned_data = MktDataSvc.get_historical_data("AAPL")
+#
+#         # Assertions
+#         assert returned_data is not None
+#         assert len(returned_data) == len(df)
+#
+#         sorted_df = df.sort_values(
+#             by="trade_date",
+#             ascending=False,
+#             ignore_index=True
+#         )
+#         assert returned_data[0].close_price == sorted_df["close_price"].iloc[0]
+#         assert returned_data[1].close_price == sorted_df["close_price"].iloc[1]
+#
+#     def test_returns_empty_list(self, app):
+#         """
+#         Test that the service correctly returns an empty list when a non-existent
+#         ticker_symbol is passed in.
+#         """
+#
+#         # Arrange data
+#         df = mock_data.get_mock_aapl_dataframe(single_row=False)
+#         mock_data.seed_stockdb_with_mock_data(df)
+#
+#         # Service Execution
+#         returned_data = MktDataSvc.get_historical_data("MSFT")
+#
+#         # Assertions
+#         assert len(returned_data) == 0

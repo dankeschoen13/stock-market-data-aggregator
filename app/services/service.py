@@ -1,9 +1,9 @@
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import update
+from datetime import date, timedelta
 from app.extensions import db
 from app.models import Stock, TrackedTicker
-
 import pandas as pd
 import numpy as np
 import logging
@@ -133,17 +133,36 @@ class MktDataSvc:
         return db.session.scalars(query).first()
 
     @classmethod
-    def get_historical_data(cls, ticker_symbol: str) -> list[Stock]:
+    def get_historical_data(
+            cls, ticker_symbol: str,
+            start_date: date | None = None, end_date: date | None = None
+    ) -> list[Stock]:
         """
-        Pulls a list of historical market data from the database
+        Pulls a list of historical market data from the database.
 
         :param ticker_symbol: the requested stock ticker
-        :return: list[Stock] | None: a list of Stock objects or None
+        :param start_date: the start date of records to be returned
+        :param end_date: the end date of records to be returned
+        :return: list[Stock]: a list of Stock objects (empty list if no records found)
+        :raises ValueError: if start_date is strictly greater than end_date
         """
 
-        query = cls._historical_data_query(ticker_symbol, descending=True)
+        # 1. Fallback Logic
+        if end_date is None:
+            end_date = date.today()
 
-        return db.session.scalars(query).all()
+        if start_date is None:
+            start_date = end_date - timedelta(days=30)
+
+        # 2. Time Travel Validation
+        if start_date > end_date:
+            raise ValueError(f"start_date ({start_date}) cannot be after end_date ({end_date}).")
+
+        # 3. Execution
+        query = cls._historical_data_query(ticker_symbol, descending=True)
+        stmt = query.where(Stock.trade_date.between(start_date, end_date))
+
+        return db.session.scalars(stmt).all()
 
 
 class TickerSvc:
