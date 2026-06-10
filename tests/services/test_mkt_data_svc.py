@@ -4,7 +4,7 @@ from app.services import MktDataSvc
 from app.models import Stock
 from app.extensions import db
 from unittest.mock import patch
-import numpy as np
+import pandas as pd
 import mock_data
 import pytest
 
@@ -104,8 +104,8 @@ class TestGetHistoricalData:
 
         # Arrange
         df = mock_data.get_mock_aapl_dataframe(single_row=False)
-        start_date = np.datetime64(date.today() - timedelta(days=30))
-        df_within_30_days = df.loc[df['trade_date'] >= start_date]
+        start_date = pd.to_datetime(date.today() - timedelta(days=30))
+        df_within_30_days = df.loc[df["trade_date"] >= start_date]
 
         mock_data.seed_stockdb_with_mock_data(df)
 
@@ -129,6 +129,51 @@ class TestGetHistoricalData:
             assert returned_data[i].trade_date == expected_date
             assert returned_data[i].close_price == sorted_df.iloc[i]["close_price"]
 
+    def test_success_with_specified_window_returns_list_of_stock_objects(self, app):
+        """
+        Test that the service correctly fetches sorted historical data strictly
+        bounded by the explicitly provided start_date and end_date.
+        """
+
+        # Arrange: Create dataframe
+        df = mock_data.get_mock_aapl_dataframe(single_row=False)
+
+        # Define start and end dates
+        start_date = date.today() - timedelta(days=29)
+        end_date = date.today() - timedelta(days=5)
+
+        # Seed Data
+        mock_data.seed_stockdb_with_mock_data(df)
+
+        # Set index and slice df to match expected returned data
+        df_within_window = df.loc[
+            (df["trade_date"] >= pd.to_datetime(start_date)) &
+            (df["trade_date"] <= pd.to_datetime(end_date))
+            ]
+
+        # Service Execution
+        returned_data = MktDataSvc.get_historical_data(
+            ticker_symbol="AAPL",
+            start_date=start_date,
+            end_date=end_date
+        )
+
+        # Assertions
+        assert isinstance(returned_data, list)
+        assert len(returned_data) == len(df_within_window)
+
+        sorted_df = df_within_window.sort_values(
+            by="trade_date",
+            ascending=False,
+            ignore_index=True
+        )
+
+        for i in range(len(returned_data)):
+            # Extract the pure Python date from the Pandas Timestamp!
+            expected_date = sorted_df.iloc[i]["trade_date"].date()
+
+            assert returned_data[i].trade_date == expected_date
+            assert returned_data[i].close_price == sorted_df.iloc[i]["close_price"]
 
     def test_default_window_returns_empty_list(self, app):
         """
