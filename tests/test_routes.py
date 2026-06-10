@@ -95,56 +95,56 @@ class TestGetLatestMetrics:
 
         mock_svc.assert_called_once_with("INVALID")
 
-class TestGetHistoricalData:
-
-    @patch('app.routes.main.MktDataSvc.get_historical_data')
-    def test_success(self, mock_svc, client):
-        """
-        Test if the route correctly fetches and serializes a list of market data for
-        a given stock ticker
-        """
-
-        # Define the return value of mock `get_historical_data` service &
-        # mock_stock_data to_dict property
-        mock_stock_data = MagicMock()
-        mock_stock_data.to_dict.return_value = {
-            "ticker": "AAPL",
-            "trade_date": "2026-06-03",
-            "close": 150.00
-        }
-
-        mock_svc.return_value = [mock_stock_data]
-
-        # Call the API
-        response = client.get('/api/data/AAPL/all')
-
-        # Assertions
-        assert response.status_code == 200
-        assert response.json["status"] == "success"
-
-        assert isinstance(response.json["data"], list)
-        assert len(response.json["data"]) == 1
-        assert response.json["meta"]["count"] == 1
-        assert response.json["data"][0]["close"] == 150.00
-
-        # Strict assertion: Prove the route called the service layer with the right ticker
-        mock_svc.assert_called_once_with("AAPL")
-
-    @patch('app.routes.main.MktDataSvc.get_historical_data')
-    def test_error(self, mock_svc, client):
-        """
-        Test if the route correctly returns an error for invalid stock tickers.
-        """
-
-        # Define the return value of mock `get_historical_data` service
-        mock_svc.return_value = []
-
-        # Call the API
-        response = client.get('/api/data/INVALID/all')
-
-        # Assertions
-        assert response.status_code == 404
-        assert response.json["status"] == "error"
-
-        # Strict assertion: Prove the route called the service layer with the right ticker
-        mock_svc.assert_called_once_with("INVALID")
+# class TestGetHistoricalData:
+#
+#     @patch('app.routes.main.MktDataSvc.get_historical_data')
+#     def test_success(self, mock_svc, client):
+#         """
+#         Test if the route correctly fetches and serializes a list of market data for
+#         a given stock ticker
+#         """
+#
+#         # Define the return value of mock `get_historical_data` service &
+#         # mock_stock_data to_dict property
+#         mock_stock_data = MagicMock()
+#         mock_stock_data.to_dict.return_value = {
+#             "ticker": "AAPL",
+#             "trade_date": "2026-06-03",
+#             "close": 150.00
+#         }
+#
+#         mock_svc.return_value = [mock_stock_data]
+#
+#         # Call the API
+#         response = client.get('/api/data/AAPL/all')
+#
+#         # Assertions
+#         assert response.status_code == 200
+#         assert response.json["status"] == "success"
+#
+#         assert isinstance(response.json["data"], list)
+#         assert len(response.json["data"]) == 1
+#         assert response.json["meta"]["count"] == 1
+#         assert response.json["data"][0]["close"] == 150.00
+#
+#         # Strict assertion: Prove the route called the service layer with the right ticker
+#         mock_svc.assert_called_once_with("AAPL")
+#
+#     @patch('app.routes.main.MktDataSvc.get_historical_data')
+#     def test_error(self, mock_svc, client):
+#         """
+#         Test if the route correctly returns an error for invalid stock tickers.
+#         """
+#
+#         # Define the return value of mock `get_historical_data` service
+#         mock_svc.return_value = []
+#
+#         # Call the API
+#         response = client.get('/api/data/INVALID/all')
+#
+#         # Assertions
+#         assert response.status_code == 404
+#         assert response.json["status"] == "error"
+#
+#         # Strict assertion: Prove the route called the service layer with the right ticker
+#         mock_svc.assert_called_once_with("INVALID")

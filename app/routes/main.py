@@ -44,19 +44,19 @@ def get_latest_metrics(ticker_symbol):
     }), 200
 
 
-@api_bp.get('/data/<string:ticker_symbol>/all')
-def get_historical_data(ticker_symbol):
-
-    historical_data = MktDataSvc.get_historical_data(ticker_symbol)
-
-    if not historical_data:
-        return jsonify({
-            "status": "error",
-            "message": f"No available data for ticker {ticker_symbol}",
-        }), 404
-
-    return jsonify({
-        "status": "success",
-        "data": [stock.to_dict() for stock in historical_data],
-        "meta": {"count": len(historical_data)},
-    }), 200
+# @api_bp.get('/data/<string:ticker_symbol>/all')
+# def get_historical_data(ticker_symbol):
+#
+#     historical_data = MktDataSvc.get_historical_data(ticker_symbol)
+#
+#     if not historical_data:
+#         return jsonify({
+#             "status": "error",
+#             "message": f"No available data for ticker {ticker_symbol}",
+#         }), 404
+#
+#     return jsonify({
+#         "status": "success",
+#         "data": [stock.to_dict() for stock in historical_data],
+#         "meta": {"count": len(historical_data)},
+#     }), 200

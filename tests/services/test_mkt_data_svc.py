@@ -1,8 +1,10 @@
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import date, timedelta
 from app.services import MktDataSvc
 from app.models import Stock
 from app.extensions import db
 from unittest.mock import patch
+import numpy as np
 import mock_data
 import pytest
 
@@ -92,45 +94,54 @@ class TestGetLatestData:
         # Assertions
         assert returned_data is None
 
-# class TestGetHistoricalData:
-#
-#     def test_success_returns_list_of_stock_objects(self, app):
-#         """
-#         Test that the service correctly fetches sorted historical data of
-#         given stock ticker
-#         """
-#
-#         # Arrange: create multiple rows
-#         df = mock_data.get_mock_aapl_dataframe(single_row=False)
-#         mock_data.seed_stockdb_with_mock_data(df)
-#
-#         # Service Execution
-#         returned_data = MktDataSvc.get_historical_data("AAPL")
-#
-#         # Assertions
-#         assert returned_data is not None
-#         assert len(returned_data) == len(df)
-#
-#         sorted_df = df.sort_values(
-#             by="trade_date",
-#             ascending=False,
-#             ignore_index=True
-#         )
-#         assert returned_data[0].close_price == sorted_df["close_price"].iloc[0]
-#         assert returned_data[1].close_price == sorted_df["close_price"].iloc[1]
-#
-#     def test_returns_empty_list(self, app):
-#         """
-#         Test that the service correctly returns an empty list when a non-existent
-#         ticker_symbol is passed in.
-#         """
-#
-#         # Arrange data
-#         df = mock_data.get_mock_aapl_dataframe(single_row=False)
-#         mock_data.seed_stockdb_with_mock_data(df)
-#
-#         # Service Execution
-#         returned_data = MktDataSvc.get_historical_data("MSFT")
-#
-#         # Assertions
-#         assert len(returned_data) == 0
+class TestGetHistoricalData:
+
+    def test_success_default_window_returns_list_of_stock_objects(self, app):
+        """
+        Test that the service correctly fetches sorted historical data of
+        given stock ticker using the default 30-day lookback window.
+        """
+
+        # Arrange
+        df = mock_data.get_mock_aapl_dataframe(single_row=False)
+        start_date = np.datetime64(date.today() - timedelta(days=30))
+        df_within_30_days = df.loc[df['trade_date'] >= start_date]
+
+        mock_data.seed_stockdb_with_mock_data(df)
+
+        # Service Execution
+        returned_data = MktDataSvc.get_historical_data("AAPL")
+
+        # Assertions
+        assert isinstance(returned_data, list)
+        assert len(returned_data) == len(df_within_30_days)
+
+        sorted_df = df_within_30_days.sort_values(
+            by="trade_date",
+            ascending=False,
+            ignore_index=True
+        )
+
+        for i in range(len(returned_data)):
+            # Extract the pure Python date from the Pandas Timestamp!
+            expected_date = sorted_df.iloc[i]["trade_date"].date()
+
+            assert returned_data[i].trade_date == expected_date
+            assert returned_data[i].close_price == sorted_df.iloc[i]["close_price"]
+
+
+    # def test_returns_empty_list(self, app):
+    #     """
+    #     Test that the service correctly returns an empty list when a non-existent
+    #     ticker_symbol is passed in.
+    #     """
+    #
+    #     # Arrange data
+    #     df = mock_data.get_mock_aapl_dataframe(single_row=False)
+    #     mock_data.seed_stockdb_with_mock_data(df)
+    #
+    #     # Service Execution
+    #     returned_data = MktDataSvc.get_historical_data("MSFT")
+    #
+    #     # Assertions
+    #     assert len(returned_data) == 0
