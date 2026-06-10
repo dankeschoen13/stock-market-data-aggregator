@@ -130,18 +130,19 @@ class TestGetHistoricalData:
             assert returned_data[i].close_price == sorted_df.iloc[i]["close_price"]
 
 
-    # def test_returns_empty_list(self, app):
-    #     """
-    #     Test that the service correctly returns an empty list when a non-existent
-    #     ticker_symbol is passed in.
-    #     """
-    #
-    #     # Arrange data
-    #     df = mock_data.get_mock_aapl_dataframe(single_row=False)
-    #     mock_data.seed_stockdb_with_mock_data(df)
-    #
-    #     # Service Execution
-    #     returned_data = MktDataSvc.get_historical_data("MSFT")
-    #
-    #     # Assertions
-    #     assert len(returned_data) == 0
+    def test_default_window_returns_empty_list(self, app):
+        """
+        Test that the service correctly returns an empty list when a non-existent
+        ticker_symbol is passed in.
+        """
+
+        # Arrange data
+        df = mock_data.get_mock_aapl_dataframe(single_row=False)
+        mock_data.seed_stockdb_with_mock_data(df)
+
+        # Service Execution
+        returned_data = MktDataSvc.get_historical_data("MSFT")
+
+        # Assertions
+        assert isinstance(returned_data, list)
+        assert len(returned_data) == 0
