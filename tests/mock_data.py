@@ -1,6 +1,6 @@
 from app.services import MktDataSvc,TickerSvc
+from datetime import date, timedelta
 import pandas as pd
-import datetime
 
 def seed_stockdb_with_mock_data(df: pd.DataFrame):
     """
@@ -24,21 +24,21 @@ def get_mock_aapl_dataframe(single_row: bool = True) -> pd.DataFrame:
     """
     Returns a mocked DataFrame matching the output of the extraction layer.
     """
+    today = date.today()
+
     data = {
         "ticker": "AAPL",
         "trade_date": [
-            datetime.date(2026, 6, 3),
-            datetime.date(2026, 6, 2),
-            datetime.date(2026, 6, 1),
-            datetime.date(2026, 5, 29), # Friday
-            datetime.date(2026, 5, 28),
-            datetime.date(2026, 5, 27),
-            datetime.date(2026, 5, 15), # Mid-window test
-            datetime.date(2026, 5, 1)   # Out-of-bounds test for the 30-day default
+            today,  # Day 0: The exact upper boundary
+            today - timedelta(days=5),  # Day 5: Safely inside the window
+            today - timedelta(days=29), # Day 29: The exact lower boundary
+            today - timedelta(days=30), # Day 30: The edge-case (depending on >= or > logic)
+            today - timedelta(days=31), # Day 31: OUTSIDE the window (Should be filtered out)
+            today - timedelta(days=45)  # Day 45: Safely outside the window
         ],
-        "close_price": [150.00, 148.50, 149.20, 147.80, 146.50, 145.90, 142.10, 138.50],
-        "volume": [1250000, 1100000, 1150000, 980000, 1050000, 1020000, 890000, 950000],
-        "rsi_14": [55.5, 52.1, 53.8, 49.2, 45.1, 43.5, 38.2, 35.0]
+        "close_price": [150.00, 148.50, 145.90, 142.10, 138.50, 135.00],
+        "volume": [1250000, 1100000, 1020000, 890000, 950000, 800000],
+        "rsi_14": [55.5, 52.1, 43.5, 38.2, 35.0, 30.1]
     }
 
     df = pd.DataFrame(data)
