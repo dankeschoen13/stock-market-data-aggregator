@@ -26,10 +26,19 @@ def get_mock_aapl_dataframe(single_row: bool = True) -> pd.DataFrame:
     """
     data = {
         "ticker": "AAPL",
-        "trade_date": [datetime.date(2026, 6, 3), datetime.date(2026, 6, 2)],
-        "close_price": [150.00, 148.50],
-        "volume": [1250000, 1100000],
-        "rsi_14": [55.5, 52.1]
+        "trade_date": [
+            datetime.date(2026, 6, 3),
+            datetime.date(2026, 6, 2),
+            datetime.date(2026, 6, 1),
+            datetime.date(2026, 5, 29), # Friday
+            datetime.date(2026, 5, 28),
+            datetime.date(2026, 5, 27),
+            datetime.date(2026, 5, 15), # Mid-window test
+            datetime.date(2026, 5, 1)   # Out-of-bounds test for the 30-day default
+        ],
+        "close_price": [150.00, 148.50, 149.20, 147.80, 146.50, 145.90, 142.10, 138.50],
+        "volume": [1250000, 1100000, 1150000, 980000, 1050000, 1020000, 890000, 950000],
+        "rsi_14": [55.5, 52.1, 53.8, 49.2, 45.1, 43.5, 38.2, 35.0]
     }
 
     df = pd.DataFrame(data)
