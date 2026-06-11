@@ -37,6 +37,17 @@ class MktDataSvc:
         return stmt
 
     @classmethod
+    def _date_filter_query(cls, trade_date: date):
+        """
+        Helper method which returns data for all active tickers on a specific day
+
+        :param trade_date: dictates the trade_date that will be queried
+        """
+        stmt = cls._active_mktdata_query().where(Stock.trade_date == trade_date)
+
+        return stmt
+
+    @classmethod
     def _prepare_data_dict(cls, df: pd.DataFrame) -> dict:
         """
         Converts the latest DataFrame row into a clean dictionary,
