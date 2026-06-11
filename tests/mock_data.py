@@ -38,7 +38,7 @@ def get_mock_aapl_dataframe(single_row: bool = True) -> pd.DataFrame:
         ],
         "close_price": [150.00, 148.50, 145.90, 142.10, 138.50, 135.00],
         "volume": [1250000, 1100000, 1020000, 890000, 950000, 800000],
-        "rsi_14": [28.5, 52.1, 43.5, 38.2, 35.0, 30.1]
+        "rsi_14": [28.5, 52.1, 43.5, 38.2, 35.0, 22.1]
     }
 
     df = pd.DataFrame(data)
