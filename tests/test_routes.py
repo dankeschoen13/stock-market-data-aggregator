@@ -1,4 +1,5 @@
 from unittest.mock import patch, MagicMock
+from datetime import  date
 
 class TestGetAvailableTickers:
     """All tests related to the /api/tickers/active endpoint."""
@@ -95,56 +96,118 @@ class TestGetLatestMetrics:
 
         mock_svc.assert_called_once_with("INVALID")
 
-# class TestGetHistoricalData:
-#
-#     @patch('app.routes.main.MktDataSvc.get_historical_data')
-#     def test_success(self, mock_svc, client):
-#         """
-#         Test if the route correctly fetches and serializes a list of market data for
-#         a given stock ticker
-#         """
-#
-#         # Define the return value of mock `get_historical_data` service &
-#         # mock_stock_data to_dict property
-#         mock_stock_data = MagicMock()
-#         mock_stock_data.to_dict.return_value = {
-#             "ticker": "AAPL",
-#             "trade_date": "2026-06-03",
-#             "close": 150.00
-#         }
-#
-#         mock_svc.return_value = [mock_stock_data]
-#
-#         # Call the API
-#         response = client.get('/api/data/AAPL/all')
-#
-#         # Assertions
-#         assert response.status_code == 200
-#         assert response.json["status"] == "success"
-#
-#         assert isinstance(response.json["data"], list)
-#         assert len(response.json["data"]) == 1
-#         assert response.json["meta"]["count"] == 1
-#         assert response.json["data"][0]["close"] == 150.00
-#
-#         # Strict assertion: Prove the route called the service layer with the right ticker
-#         mock_svc.assert_called_once_with("AAPL")
-#
-#     @patch('app.routes.main.MktDataSvc.get_historical_data')
-#     def test_error(self, mock_svc, client):
-#         """
-#         Test if the route correctly returns an error for invalid stock tickers.
-#         """
-#
-#         # Define the return value of mock `get_historical_data` service
-#         mock_svc.return_value = []
-#
-#         # Call the API
-#         response = client.get('/api/data/INVALID/all')
-#
-#         # Assertions
-#         assert response.status_code == 404
-#         assert response.json["status"] == "error"
-#
-#         # Strict assertion: Prove the route called the service layer with the right ticker
-#         mock_svc.assert_called_once_with("INVALID")
+class TestGetHistoricalData:
+
+    @patch('app.routes.main.MktDataSvc.get_historical_data')
+    def test_success_no_time_window_returns_data(self, mock_svc, client):
+        """
+        Test if the route correctly fetches and serializes a list of market data for
+        a given stock ticker
+        """
+
+        # Define the return value of mock `get_historical_data` service &
+        # mock_stock_data to_dict property
+        mock_stock_data = MagicMock()
+        mock_stock_data.to_dict.return_value = {
+            "ticker": "AAPL",
+            "trade_date": "2026-06-03",
+            "close": 150.00
+        }
+
+        mock_svc.return_value = [mock_stock_data]
+
+        # Call the API
+        response = client.get('/api/data/AAPL/all')
+
+        # Assertions
+        assert response.status_code == 200
+        assert response.json["status"] == "success"
+
+        assert isinstance(response.json["data"], list)
+        assert len(response.json["data"]) == 1
+        assert response.json["meta"]["count"] == 1
+        assert response.json["data"][0]["close"] == 150.00
+
+        # Strict assertion: Prove the route called the service layer with the right ticker
+        expected_start = None
+        expected_end = None
+
+        mock_svc.assert_called_once_with(
+            "AAPL",
+            start_date=expected_start,
+            end_date=expected_end
+        )
+
+    @patch('app.routes.main.MktDataSvc.get_historical_data')
+    def test_success_with_time_window_returns_data(self, mock_svc, client):
+        """
+        Test if the route correctly parses query string dates, fetches multiple
+        rows, and serializes the market data.
+        """
+
+        # 1. Arrange: Create multiple mock objects with distinct to_dict returns
+        mock_day_1 = MagicMock()
+        mock_day_1.to_dict.return_value = {
+            "ticker": "AAPL",
+            "trade_date": "2026-06-03",
+            "close": 150.00
+        }
+
+        mock_day_2 = MagicMock()
+        mock_day_2.to_dict.return_value = {
+            "ticker": "AAPL",
+            "trade_date": "2026-06-02",
+            "close": 148.50
+        }
+
+        # Return them as a list to simulate the SQLAlchemy scalars().all() return
+        mock_svc.return_value = [mock_day_1, mock_day_2]
+
+        # 2. Call the API using the query_string parameter
+        response = client.get(
+            '/api/data/AAPL/all',
+            query_string={
+                "start-date": "2026-06-01",
+                "end-date": "2026-06-05"
+            }
+        )
+
+        # 3. Assertions: Response State
+        assert response.status_code == 200
+        assert response.json["status"] == "success"
+
+        # Assertions: Payload Data
+        assert isinstance(response.json["data"], list)
+        assert len(response.json["data"]) == 2
+        assert response.json["meta"]["count"] == 2
+        assert response.json["data"][0]["close"] == 150.00
+        assert response.json["data"][1]["close"] == 148.50
+
+        # 4. Strict Assertion: Prove the strings were parsed into date objects!
+        expected_start = date(2026, 6, 1)
+        expected_end = date(2026, 6, 5)
+
+        mock_svc.assert_called_once_with(
+            "AAPL",
+            start_date=expected_start,
+            end_date=expected_end
+        )
+
+    # @patch('app.routes.main.MktDataSvc.get_historical_data')
+    # def test_error(self, mock_svc, client):
+    #     """
+    #     Test if the route correctly returns an error for invalid stock tickers.
+    #     """
+    #
+    #     # Define the return value of mock `get_historical_data` service
+    #     mock_svc.return_value = []
+    #
+    #     # Call the API
+    #     response = client.get('/api/data/INVALID/all')
+    #
+    #     # Assertions
+    #     assert response.status_code == 404
+    #     assert response.json["status"] == "error"
+    #
+    #     # Strict assertion: Prove the route called the service layer with the right ticker
+    #     mock_svc.assert_called_once_with("INVALID")
