@@ -193,21 +193,83 @@ class TestGetHistoricalData:
             end_date=expected_end
         )
 
-    # @patch('app.routes.main.MktDataSvc.get_historical_data')
-    # def test_error(self, mock_svc, client):
-    #     """
-    #     Test if the route correctly returns an error for invalid stock tickers.
-    #     """
-    #
-    #     # Define the return value of mock `get_historical_data` service
-    #     mock_svc.return_value = []
-    #
-    #     # Call the API
-    #     response = client.get('/api/data/INVALID/all')
-    #
-    #     # Assertions
-    #     assert response.status_code == 404
-    #     assert response.json["status"] == "error"
-    #
-    #     # Strict assertion: Prove the route called the service layer with the right ticker
-    #     mock_svc.assert_called_once_with("INVALID")
+    @patch('app.routes.main.MktDataSvc.get_historical_data')
+    def test_invalid_ticker_returns_error(self, mock_svc, client):
+        """
+        Test if the route correctly catches a service-layer ValueError and returns a
+        """
+
+        # Define the return value of mock `get_historical_data` service
+        mock_svc.return_value = []
+
+        # Call the API
+        response = client.get('/api/data/INVALID/all')
+
+        # Assertions
+        assert response.status_code == 404
+        assert response.json["status"] == "error"
+
+        # Strict assertion: Prove the route called the service layer with the right ticker
+        mock_svc.assert_called_once_with(
+            "INVALID",
+            start_date=None,
+            end_date=None
+        )
+
+    @patch('app.routes.main.MktDataSvc.get_historical_data')
+    def test_invalid_date_format_returns_error(self, mock_svc, client):
+        """
+        Test if the route correctly returns a 400 error when an invalid date
+        format is provided in the query string.
+        """
+
+        # Call the API
+        response = client.get(
+            '/api/data/AAPL/all',
+            query_string={
+                "start-date": "06-01-2026",
+                "end-date": "2026-06-05"
+            }
+        )
+
+        # Assertions
+        assert response.status_code == 400
+        assert response.json["status"] == "error"
+        assert response.json["message"] == "Invalid date format. Please use YYYY-MM-DD."
+
+        mock_svc.assert_not_called()
+
+    @patch('app.routes.main.MktDataSvc.get_historical_data')
+    def test_start_date_after_end_date_returns_error(self, mock_svc, client):
+        """
+        Test if the route correctly catches a service-layer ValueError and
+        returns a 400 error when the start date chronologically follows the end date.
+        """
+
+        # Arrange: Simulate the service layer rejecting the time-travel parameters
+        mock_svc.side_effect = ValueError("Simulated service error!")
+
+        # Call the API
+        response = client.get(
+            '/api/data/AAPL/all',
+            query_string={
+                "start-date": "2026-06-10",
+                "end-date": "2026-06-05"
+            }
+        )
+
+        # Assertions
+        assert response.status_code == 400
+        assert response.json["status"] == "error"
+        assert response.json["message"] == "Simulated service error!"
+
+        # Strict Assertion: Prove the dates were still parsed correctly
+        # before the service layer rejected them
+        expected_start = date(2026, 6, 10)
+        expected_end = date(2026, 6, 5)
+
+        mock_svc.assert_called_once_with(
+            "AAPL",
+            start_date=expected_start,
+            end_date=expected_end
+        )
