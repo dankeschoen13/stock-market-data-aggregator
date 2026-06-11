@@ -191,3 +191,34 @@ class TestGetHistoricalData:
         # Assertions
         assert isinstance(returned_data, list)
         assert len(returned_data) == 0
+
+
+class TestGetTechnicallyOversold:
+    """Unit tests for the MktDataSvc.get_technically_oversold method."""
+
+    def test_success_default_date_and_rsi_returns_list_of_stock_obj(self, app):
+        """
+        Test that the method correctly fetches a list of Stock objects
+        matching the default RSI threshold (<= 30) for the current date.
+        """
+        # Arrange
+        df = mock_data.get_mock_aapl_dataframe(single_row=False)
+        mock_data.seed_stockdb_with_mock_data(df)
+
+        today_timestamp = pd.to_datetime(date.today())
+        expected_df = df.loc[
+            (df["trade_date"] == today_timestamp) &
+            (df["rsi_14"] <= 30)
+            ]
+        expected_count = len(expected_df)
+
+        # Service Execution
+        returned_data = MktDataSvc.get_technically_oversold()
+
+        # Assertions
+        assert isinstance(returned_data, list)
+        assert len(returned_data) == expected_count
+
+        for i in range(len(returned_data)):
+            assert returned_data[i].rsi_14 <= 30
+            assert returned_data[i].trade_date == date.today()
