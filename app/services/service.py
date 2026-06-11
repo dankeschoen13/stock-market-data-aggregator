@@ -175,6 +175,26 @@ class MktDataSvc:
 
         return db.session.scalars(stmt).all()
 
+    @classmethod
+    def get_technically_oversold(
+            cls, trade_date: date | None = None, rsi_threshold: int = 30
+    ) -> list[Stock]:
+        """
+        Retrieves a list of active stocks that are technically oversold
+        on a specific date based on their Relative Strength Index (RSI).
+
+        :param trade_date: The specific market date to query. Defaults to today.
+        :param rsi_threshold: The RSI value threshold. Defaults to 30.
+        :return: list[Stock]: A list of Stock objects meeting the oversold criteria.
+        """
+        if not trade_date:
+            trade_date = date.today()
+
+        query = cls._date_filter_query(trade_date)
+        stmt = query.where(Stock.rsi_14 <= rsi_threshold)
+
+        return db.session.scalars(stmt).all()
+
 
 class TickerSvc:
 
