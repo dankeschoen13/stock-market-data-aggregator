@@ -222,3 +222,29 @@ class TestGetTechnicallyOversold:
         for i in range(len(returned_data)):
             assert returned_data[i].rsi_14 <= 30
             assert returned_data[i].trade_date == date.today()
+
+    def test_returns_empty_list_for_unmatched_criteria(self, app):
+        """
+        Test that the method correctly returns an empty list when no market
+        data matches the requested trade date or RSI threshold.
+        """
+        # Arrange
+        df = mock_data.get_mock_aapl_dataframe(single_row=True)
+        mock_data.seed_stockdb_with_mock_data(df)
+
+        requested_date = date(2026, 1, 1)
+
+        target_timestamp = pd.to_datetime(requested_date)
+        expected_df = df.loc[
+            (df["trade_date"] == target_timestamp) &
+            (df["rsi_14"] <= 30)
+            ]
+        expected_count = len(expected_df)
+
+        # Service Execution
+        returned_data = MktDataSvc.get_technically_oversold(trade_date=requested_date)
+
+        # Assertions
+        assert isinstance(returned_data, list)
+        assert len(returned_data) == expected_count
+        assert len(returned_data) == 0 
