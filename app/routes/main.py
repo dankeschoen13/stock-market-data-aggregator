@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app.services import TickerSvc, MktDataSvc
-from datetime import datetime
-from app.models import Stock
+from datetime import datetime, date
 
 api_bp = Blueprint('api', __name__)
 
@@ -90,4 +89,53 @@ def get_historical_data(ticker_symbol):
         "status": "success",
         "data": [stock.to_dict() for stock in historical_data],
         "meta": {"count": len(historical_data)},
+    }), 200
+
+@api_bp.get('/data/oversold')
+def get_technically_oversold():
+
+    rsi_str = request.args.get("rsi")
+    trade_date_str = request.args.get("trade-date")
+
+    rsi = 30
+    trade_date = None
+
+    try:
+        if rsi_str is not None:
+            rsi = int(rsi_str)
+    except ValueError:
+        return jsonify({
+            "status": "error",
+            "message": "Invalid RSI value. Please choose an integer between 0 and 100."
+        }), 400
+
+    try:
+        if trade_date_str is not None:
+            trade_date = datetime.strptime(trade_date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify({
+            "status": "error",
+            "message": "Invalid date format. Please use YYYY-MM-DD."
+        }), 400
+
+    try:
+        oversold_data = MktDataSvc.get_technically_oversold(
+            trade_date=trade_date,
+            rsi_threshold=rsi
+        )
+    except ValueError as e:
+
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+    if not oversold_data:
+        target_date = trade_date if trade_date else datetime.today().date()
+        return jsonify({
+            "status": "error",
+            "message": f"No oversold stocks found for {target_date}.",
+        }), 404
+
+    return jsonify({
+        "status": "success",
+        "data": [stock.to_dict() for stock in oversold_data],
+        "meta": {"count": len(oversold_data)},
     }), 200
