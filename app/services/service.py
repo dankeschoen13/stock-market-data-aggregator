@@ -186,9 +186,13 @@ class MktDataSvc:
         :param trade_date: The specific market date to query. Defaults to today.
         :param rsi_threshold: The RSI value threshold. Defaults to 30.
         :return: list[Stock]: A list of Stock objects meeting the oversold criteria.
+        :raises ValueError: If rsi_threshold is strictly less than 0 or greater than 100.
         """
         if not trade_date:
             trade_date = date.today()
+
+        if rsi_threshold < 0 or rsi_threshold > 100:
+            raise ValueError(f"Invalid rsi_threshold ({rsi_threshold}): must be between 0 and 100.")
 
         query = cls._date_filter_query(trade_date)
         stmt = query.where(Stock.rsi_14 <= rsi_threshold)
