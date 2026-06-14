@@ -275,7 +275,7 @@ class TestGetHistoricalData:
 
 class TestGetTechnicallyOversold:
 
-    @patch('app.routes.main.MktDataSvc.get_technically_oversold')  # Ensure this path matches your imports!
+    @patch('app.routes.main.MktDataSvc.get_technically_oversold')
     def test_success_no_args_returns_data(self, mock_svc, client):
         """
         Test if the route correctly fetches and serializes a list of latest market data
@@ -316,3 +316,43 @@ class TestGetTechnicallyOversold:
             trade_date=expected_trade_date,
             rsi_threshold=expected_rsi
         )
+
+    @patch('app.routes.main.MktDataSvc.get_technically_oversold')
+    def test_invalid_rsi_value_returns_error(self, mock_svc, client):
+        """
+        Test that the route returns a 400 Bad Request when a non-integer
+        string is provided for the RSI threshold, successfully blocking service execution.
+        """
+
+        # Call the API
+        response = client.get(
+            '/api/data/oversold',
+            query_string={"rsi": "one-hundred"}
+        )
+
+        # Assertions
+        assert response.status_code == 400
+        assert response.json["status"] == "error"
+        assert response.json["message"] == "Invalid RSI value. Please choose an integer between 0 and 100."
+
+        mock_svc.assert_not_called()
+
+    @patch('app.routes.main.MktDataSvc.get_technically_oversold')
+    def test_invalid_date_format_returns_error(self, mock_svc, client):
+        """
+        Test that the route returns a 400 Bad Request when an incorrectly formatted
+        date string is provided, successfully blocking service execution.
+        """
+
+        # Call the API
+        response = client.get(
+            '/api/data/oversold',
+            query_string={"trade-date": "06-01-2026"}
+        )
+
+        # Assertions
+        assert response.status_code == 400
+        assert response.json["status"] == "error"
+        assert response.json["message"] == "Invalid date format. Please use YYYY-MM-DD."
+
+        mock_svc.assert_not_called()
