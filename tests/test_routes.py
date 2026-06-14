@@ -105,8 +105,7 @@ class TestGetHistoricalData:
         a given stock ticker
         """
 
-        # Define the return value of mock `get_historical_data` service &
-        # mock_stock_data to_dict property
+        # Arrange
         mock_stock_data = MagicMock()
         mock_stock_data.to_dict.return_value = {
             "ticker": "AAPL",
@@ -272,4 +271,48 @@ class TestGetHistoricalData:
             "AAPL",
             start_date=expected_start,
             end_date=expected_end
+        )
+
+class TestGetTechnicallyOversold:
+
+    @patch('app.routes.main.MktDataSvc.get_technically_oversold')  # Ensure this path matches your imports!
+    def test_success_no_args_returns_data(self, mock_svc, client):
+        """
+        Test if the route correctly fetches and serializes a list of latest market data
+        considered oversold based on the default rsi_threshold of 30.
+        """
+
+        # Arrange
+        mock_stock_data = MagicMock()
+        mock_stock_data.to_dict.return_value = {
+            "ticker": "AAPL",
+            "trade_date": "2026-06-14",
+            "close": 150.00,
+            "rsi_14": 30.00
+        }
+        mock_svc.return_value = [mock_stock_data]
+
+        # Call the API
+        response = client.get('/api/data/oversold')
+
+        # Assertions
+        assert response.status_code == 200
+        assert response.json["status"] == "success"
+
+        assert isinstance(response.json["data"], list)
+        assert len(response.json["data"]) == 1
+        assert response.json["meta"]["count"] == 1
+
+        # Verify accurate JSON serialization
+        assert response.json["data"][0]["close"] == 150.00
+        assert response.json["data"][0]["rsi_14"] == 30
+        assert response.json["data"][0]["trade_date"] == "2026-06-14"
+
+        # Strict assertion: Prove the route called the service layer with correct defaults
+        expected_trade_date = None
+        expected_rsi = 30
+
+        mock_svc.assert_called_once_with(
+            trade_date=expected_trade_date,
+            rsi_threshold=expected_rsi
         )
