@@ -356,3 +356,35 @@ class TestGetTechnicallyOversold:
         assert response.json["message"] == "Invalid date format. Please use YYYY-MM-DD."
 
         mock_svc.assert_not_called()
+
+    @patch('app.routes.main.MktDataSvc.get_technically_oversold')
+    def test_service_validation_returns_error(self, mock_svc, client):
+        """
+        Test that the route correctly catches a service-layer ValueError and
+        returns a 400 Bad Request when business logic validation fails
+        (e.g., RSI parameter is out of bounds).
+        """
+        mock_svc.side_effect = ValueError("Simulated service error!")
+
+        # Call the API
+        response = client.get(
+            '/api/data/oversold',
+            query_string={
+                "rsi": "105",
+                "trade-date": "2026-06-05"
+            }
+        )
+
+        # Assertions
+        assert response.status_code == 400
+        assert response.json["status"] == "error"
+        assert response.json["message"] == "Simulated service error!"
+
+        # Strict Assertion
+        expected_rsi = 105
+        expected_trade_date = date(2026, 6, 5)
+
+        mock_svc.assert_called_once_with(
+            trade_date=expected_trade_date,
+            rsi_threshold=expected_rsi
+        )
