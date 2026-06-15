@@ -388,3 +388,30 @@ class TestGetTechnicallyOversold:
             trade_date=expected_trade_date,
             rsi_threshold=expected_rsi
         )
+
+    @patch('app.routes.main.MktDataSvc.get_technically_oversold')
+    def test_no_matching_data_returns_error(self, mock_svc, client):
+        """
+        Test that the route correctly catches a service-layer ValueError and
+        returns a 400 Bad Request when business logic validation fails
+        (e.g., RSI parameter is out of bounds).
+        """
+        # Arrange
+        mock_svc.return_value = []
+        expected_date = date.today()
+
+        # Call the API
+        response = client.get('/api/data/oversold')
+
+        # Assertions
+        assert response.status_code == 404
+        assert response.json["status"] == "error"
+        assert response.json["message"] == f"No oversold stocks found for {expected_date}."
+
+        # Strict Assertion
+        expected_rsi = 30
+
+        mock_svc.assert_called_once_with(
+            trade_date=None,
+            rsi_threshold=expected_rsi
+        )
