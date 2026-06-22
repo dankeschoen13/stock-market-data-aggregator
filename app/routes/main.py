@@ -124,7 +124,6 @@ def get_technically_oversold():
             rsi_threshold=rsi
         )
     except ValueError as e:
-
         return jsonify({"status": "error", "message": str(e)}), 400
 
     if not oversold_data:

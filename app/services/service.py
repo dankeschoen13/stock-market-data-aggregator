@@ -23,8 +23,9 @@ class MktDataSvc:
         Helper method which returns historical data for the specified ticker_symbol
         in either descending or ascending order
 
-        :param ticker_symbol: stock ticker
-        :param descending: dictates the order of data. defaults to true.
+        Args:
+            ticker_symbol: stock ticker
+            descending: dictates the order of data. defaults to true.
         """
 
         stmt = cls._active_mktdata_query().where(Stock.ticker == ticker_symbol)
@@ -41,7 +42,8 @@ class MktDataSvc:
         """
         Helper method which returns data for all active tickers on a specific day
 
-        :param trade_date: dictates the trade_date that will be queried
+        Args:
+            trade_date: dictates the trade_date that will be queried
         """
         stmt = cls._active_mktdata_query().where(Stock.trade_date == trade_date)
 
@@ -93,7 +95,7 @@ class MktDataSvc:
         return entry_dict
 
     @classmethod
-    def load_data(cls, df: pd.DataFrame):
+    def load_data(cls, df: pd.DataFrame) -> None:
         """
         Loads the latest market data entry to the database.
 
@@ -117,7 +119,6 @@ class MktDataSvc:
         )
 
         try:
-            # Execute and Commit
             db.session.execute(upsert_stmt)
             db.session.commit()
 
@@ -151,11 +152,16 @@ class MktDataSvc:
         """
         Pulls a list of historical market data from the database.
 
-        :param ticker_symbol: the requested stock ticker
-        :param start_date: the start date of records to be returned
-        :param end_date: the end date of records to be returned
-        :return: list[Stock]: a list of Stock objects (empty list if no records found)
-        :raises ValueError: if start_date is strictly greater than end_date
+        Args:
+            ticker_symbol: the requested stock ticker
+            start_date: the start date of records to be returned
+            end_date: the end date of records to be returned
+
+        Returns:
+            list[Stock]: a list of Stock objects (empty list if no records found)
+
+        Raises:
+            ValueError: if start_date is strictly greater than end_date
         """
 
         # 1. Fallback Logic
@@ -183,10 +189,15 @@ class MktDataSvc:
         Retrieves a list of active stocks that are technically oversold
         on a specific date based on their Relative Strength Index (RSI).
 
-        :param trade_date: The specific market date to query. Defaults to today.
-        :param rsi_threshold: The RSI value threshold. Defaults to 30.
-        :return: list[Stock]: A list of Stock objects meeting the oversold criteria.
-        :raises ValueError: If rsi_threshold is strictly less than 0 or greater than 100.
+        Args:
+            trade_date: The specific market date to query. Defaults to today.
+            rsi_threshold: The RSI value threshold. Defaults to 30.
+
+        Returns:
+            list[Stock]: A list of Stock objects meeting the oversold criteria.
+
+        Raises:
+            ValueError: If rsi_threshold is strictly less than 0 or greater than 100.
         """
         if not trade_date:
             trade_date = date.today()
@@ -278,7 +289,7 @@ class TickerSvc:
             ticker_symbol: The stock ticker that needs to be pulled
 
         Returns:
-           TrackedTicker: The matching TrackedTicker
+            TrackedTicker: The matching TrackedTicker
         """
         query = db.select(TrackedTicker).where(TrackedTicker.ticker == ticker_symbol)
 
@@ -288,7 +299,9 @@ class TickerSvc:
     def deactivate_tickers(cls, ticker_symbols: list | str) -> int:
         """
         Performs a bulk soft-delete on a list of tickers.
-        Returns the number of rows successfully deactivated.
+
+        Returns:
+             int: the number of rows successfully deactivated.
         """
 
         if isinstance(ticker_symbols, str):
@@ -302,15 +315,13 @@ class TickerSvc:
         )
 
         try:
-            # Execute and commit
             result = db.session.execute(update_stmt)
             db.session.commit()
 
-            # Return a list of affected rows.
-            return result.rowcount
-
         except SQLAlchemyError as e:
             db.session.rollback()
-            # Log error
+
             logger.error(f"Database error while updating tickers table. Error: {e}")
             raise ValueError(f"Failed to deactivate tickers: {e}")
+
+        return result.rowcount
